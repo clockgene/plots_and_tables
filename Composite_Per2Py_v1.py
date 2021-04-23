@@ -4,7 +4,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v210324a
+v210423
 """
 # imports
 import numpy  as np
@@ -24,10 +24,10 @@ import re
 from matplotlib import colors
 
 # set number of rows, i.e. how many SCNs were analyzed
-Nr = 10
+Nr = 12
 
 # Choose to plot heatmap of Phases, Amplitudes or Periods, or Phases_Histogram
-graphtype = 'Phases'
+graphtype = 'Phases_Histogram'
 
 # stackoverflow filter outliers - change m as needed (2 is default, 10 filters only most extreme)
 def reject_outliers(data, column='Amplitude', m=10):
@@ -57,7 +57,7 @@ def polarhist(axh, title):
     #axh.set_thetagrids([])  # turns off labels in case of problems
     axh.yaxis.grid(False)   # turns off circles
     axh.xaxis.grid(False)  # turns off radial grids
-    axh.tick_params(pad=-12)   # moves labels closer or further away from subplots
+    axh.tick_params(pad=-8)   # moves labels closer or further away from subplots, may need to adjust depending on number of subplots
     axh.set_xlabel(f'{title}', fontsize=2, labelpad=1)   # place specific title and use labelpad to adjust proximity to subplot
     #plt.title("Phase histogram", fontsize=14, fontstyle='italic')
     
