@@ -1,27 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue May 25 11:42:24 2021
-
+Plots Luminoskan circadian data in 384 individual line plots or 48 line plots with confidence interval.
 @author: Martin.Sladek
 """
 
-# imports
 import numpy  as np
-import scipy as sp
 import pandas as pd
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
-import winsound
 import matplotlib as mpl
-import seaborn as sns
-import math
-import warnings
-import glob, os, shutil
+import glob, os
 from tkinter import filedialog
 from tkinter import *
 import re
-from matplotlib import colors
-
 
 ##################### Tkinter button for browse/set_dir ################################
 def browse_button():    
