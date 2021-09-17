@@ -625,6 +625,45 @@ if experiment == 'before_after_rhythm':
  
 
 if experiment == 'rhythm':
+
+    if graphtype == 'Trace':   # create plots of Raw traces and cosines
+        
+        fig, axs = plt.subplots(Nw, Nc, figsize=(20,40))        # gridspec_kw={'width_ratios':[2,1]} This sets different siye for left and right subplots.
+        
+        counter = 0
+        images = []
+        for i in range(Nw):
+            for j in range(Nc):
+                       
+                mydir = f'{mydirlist[counter]}\\'
+                print(mydir)
+                data = pd.read_csv(glob.glob(f'{mydir}*cosine.csv')[0])
+                datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
+                title = mydirlist[counter][-9:]
+                               
+                axs[i, j].plot(datar.index, datar.median(axis=1))
+                axs[i, j].plot(data.index, data.median(axis=1), color='r')
+                axs[i, j].label_outer()
+                axs[i, j].set_yticklabels([])
+                axs[i, j].set_xticklabels([]) 
+                axs[i, j].set_xlabel(f'{title}') 
+                axs[i, j].set_xticks([])
+                axs[i, j].set_yticks([])
+                axs[i, j].spines['top'].set_visible(False) # to turn off individual borders 
+                axs[i, j].spines['right'].set_visible(False)
+                axs[i, j].spines['bottom'].set_visible(False)
+                axs[i, j].spines['left'].set_visible(False)
+
+                
+                counter += 1
+
+        ### To save as bitmap png for easy viewing ###
+        plt.savefig(f'{path}Composite_Trace.png')
+        ### To save as vector svg with fonts editable in Corel ###
+        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.clf()
+        plt.close()
+
     
     if graphtype == 'Phase_Histogram':
             
@@ -661,17 +700,15 @@ if experiment == 'rhythm':
                 polarhist(axh[i, j], mydirlist[counter][-9:])  # function(input data, name of data taken from last 9 chars in path)
                 counter += 1
         
-        
-        #plt.show() 
-        #fig.tight_layout()
         ### To save as bitmap png for easy viewing ###
         plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=1000)
         ### To save as vector svg with fonts editable in Corel ###
         plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
         plt.clf()
-        plt.close()                        
+        plt.close()
+                        
         
-    else:     
+    if graphtype == 'Phase' or graphtype == 'Amplitude' or graphtype == 'Period' or graphtype == 'Trend':
            
         ##### Taken frim Matplotlib Example multimage
         fig, axs = plt.subplots(Nw, Nc)
@@ -816,4 +853,3 @@ if experiment == 'decay':
     plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
     plt.clf()
     plt.close()
-        
