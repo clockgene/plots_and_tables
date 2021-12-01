@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v210917
+v211201 - fixed bug in bef-after experiments where only amp values were plotted fro Period Trend
 """
 # imports
 import numpy  as np
@@ -16,29 +16,36 @@ from tkinter import filedialog
 from tkinter import *
 import re
 from matplotlib import colors
+import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
 experiment = 'before_after_rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
-graphtype = 'Trace'
+graphtype = 'Trend'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 89
+treatment_time = 78
 
-# set number of rows, i.e. how many individual L and R SCNs were analyzed. For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, now works only for 2 cols x 3 or more full rows.
+# set number of rows, i.e. how many individual L and R SCNs were analyzed. For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, works only for 2 cols x 3 or more full rows.
 Nr = 12
 # no. of columns (main folders)
 Nc = 2
 # no. of rows (subfolders in each main folder)
 Nw = 3
 
+# Adjust how close and how big labels are in Phase_Histogram, depends on number of plots, for 12 rows try -12 and 2, for 2x3 try -10 and 4
+pad = -12
+fontsize = 3
+
+# Adjust spacing between before and after heatmap plots, for SCN -0.9, for CP -0.6
+wspace=-0.9
 
 # DO NOT EDIT BELOW
 
 # stackoverflow filter outliers - change m as needed (2 is default, 10 filters only most extreme)
-def reject_outliers(data, column='Amplitude', m=10):
+def reject_outliers(data, column=graphtype, m=10):
     data2 = data.loc[(data[column] == data[column])][column]
     d = np.abs(data[column] - np.median(data2))
     mdev = np.median(d[d == d])
@@ -54,19 +61,19 @@ def polarphase(x):
         r = ((x % 24)/12)*np.pi
     return r
 
-def polarhist(axh, title):
+def polarhist(axh, title, pad=-12):
     #axh = plt.subplot(projection='polar')                                                 #plot with polar projection, but must set for fig subplots
     axh.bar(theta, phase_hist, width=width, color=colorcode, bottom=2, alpha=0.8)          # bottom > 0 to put nice hole in centre
     
     axh.set_yticklabels([])          # this deletes radial ticks
     axh.set_theta_zero_location('N') # this puts CT=0 theta=0 to North - points upwards
     axh.set_theta_direction(-1)      #reverse direction of theta increases
-    axh.set_thetagrids((0, 45, 90, 135, 180, 225, 270, 315), labels=('0', '3', '6', '9', '12', '15', '18', '21'), fontsize=2)  #set theta grids and labels, **kwargs for text properties
+    axh.set_thetagrids((0, 45, 90, 135, 180, 225, 270, 315), labels=('0', '3', '6', '9', '12', '15', '18', '21'), fontsize=fontsize)  #set theta grids and labels, **kwargs for text properties
     #axh.set_thetagrids([])  # turns off labels in case of problems
     axh.yaxis.grid(False)   # turns off circles
     axh.xaxis.grid(False)  # turns off radial grids
-    axh.tick_params(pad=-8)   # moves labels closer or further away from subplots, may need to adjust depending on number of subplots
-    axh.set_xlabel(f'{title}', fontsize=2, labelpad=1)   # place specific title and use labelpad to adjust proximity to subplot
+    axh.tick_params(pad=pad)   # moves labels closer or further away from subplots, may need to adjust depending on number of subplots
+    axh.set_xlabel(f'{title}', fontsize=fontsize, labelpad=1)   # place specific title and use labelpad to adjust proximity to subplot
     #plt.title("Phase histogram", fontsize=14, fontstyle='italic')
     
     # calculate vector sum of angles and plot "Rayleigh" vector
@@ -80,7 +87,6 @@ def polarhist(axh, title):
     #v_angle = math.atan((uv_y/uv_radius)/(uv_x/uv_radius))    
     v_angle = uv_phase     # they are the same 
     v_length = uv_radius*max(phase_hist)  # because hist is not (0,1) but (0, N in largest bin), need to increase radius
-    #axh.annotate('',xy=(v_angle, v_length), xytext=(v_angle,0), xycoords='data', arrowprops=dict(width=0.2, color='black')) #add arrow
     axh.annotate('',xy=(v_angle, v_length), xytext=(v_angle,0), xycoords='data', arrowprops=dict(linewidth=0.2, arrowstyle="-|>", color='black', mutation_scale=2)) #add arrow    
     
     return axh
@@ -368,7 +374,6 @@ circular_colors = np.array([[0.91510904, 0.55114749, 0.67037311],
    [0.91107745, 0.55202582, 0.68564633],
    [0.91314629, 0.55155124, 0.67804225]])
 
-
 if graphtype == 'Phase' or graphtype == 'Phase_Histogram':
     cmap = mpl.colors.ListedColormap(circular_colors)
 if graphtype == 'Amplitude':
@@ -461,12 +466,12 @@ if experiment == 'before_after_rhythm':
                 datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
                 title = mydirlist[counter][-9:]
                                
-                axs[i, j].plot(datar.index, datar.median(axis=1))
-                axs[i, j].plot(data.index, data.median(axis=1), color='r')
+                axs[i, j].plot(datar.index[12:], datar[12:].median(axis=1))  # plot without the first 12h, or adjust accordingly
+                axs[i, j].plot(data.index[12:], data[12:].median(axis=1), color='r')
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
-                axs[i, j].set_xlabel(f'{title}') 
+                axs[i, j].set_xlabel(f'{title}', fontsize=round(int(288/Nr)), labelpad=-5) 
                 axs[i, j].set_xticks([])
                 axs[i, j].set_yticks([])
                 axs[i, j].spines['top'].set_visible(False) # to turn off individual borders 
@@ -477,8 +482,8 @@ if experiment == 'before_after_rhythm':
                 x_tail = treatment_time
                 y_tail = datar.median(axis=1).max()
                 x_head = treatment_time
-                y_head = datar.median(axis=1).max()/2 - datar.median(axis=1).max()/6                
-                arrow = mpatches.FancyArrowPatch((x_tail, y_tail), (x_head, y_head), mutation_scale=50)  #
+                y_head = datar.median(axis=1).max()/2 - datar.median(axis=1).max()/6
+                arrow = mpatches.FancyArrowPatch((x_tail, y_tail), (x_head, y_head), mutation_scale=50)  #FancyArrowPatch
                 axs[i, j].add_patch(arrow)
                 
                 counter += 1
@@ -486,7 +491,7 @@ if experiment == 'before_after_rhythm':
         ### To save as bitmap png for easy viewing ###
         plt.savefig(f'{path}Composite_Trace.png')
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
         plt.clf()
         plt.close()
         
@@ -495,7 +500,7 @@ if experiment == 'before_after_rhythm':
         
         # this loop assumes folder structure with multiple SCN folders and 2 subfolders (before and after treatment, first is after due to name)             
         fig, axh = plt.subplots(Nr, Ncc, subplot_kw={'projection': 'polar'})   
-        fig.subplots_adjust(hspace=0.3, wspace=-0.9)            # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=0.3, wspace=wspace)            # negative wspace moves left and right close but there is empty space
         counter = 0
         for i in range(Nr):        
             for j in range(1, -1, -1):
@@ -519,16 +524,16 @@ if experiment == 'before_after_rhythm':
                 theta = np.linspace(0.0, 2 * np.pi, N_bins, endpoint=False)     # this just creates number of bins spaced along circle, in radians for polar projection, use as x in histogram
                 width = (2*np.pi) / N_bins                                      # equal width for all bins that covers whole circle
                 
-                polarhist(axh[i, j], mydirlist[counter][-9:])  # function(input data, name of data taken from last 9 chars in path)
+                polarhist(axh[i, j], mydirlist[counter][-9:], pad)  # function(input data, name of data taken from last 9 chars in path)
                 counter += 1
         
         
         #plt.show() 
         #fig.tight_layout()
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=1000)
+        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=300)
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
         plt.clf()
         plt.close()
 
@@ -539,12 +544,12 @@ if experiment == 'before_after_rhythm':
         # no of columns
         #Nc = 2
         fig, axs = plt.subplots(Nr, Ncc)
-        fig.subplots_adjust(hspace=0.3, wspace=-0.9)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=0.3, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
         #alldata = pd.read_csv(glob.glob(f'{mydirlist[0]}\\*oscillatory_params.csv')[0]) #combine all datasets for control of max values, etc.
-        checkdata = pd.DataFrame(columns = ['X', 'Y', 'Amplitude'])
+        #checkdata = pd.DataFrame(columns = ['X', 'Y', 'Amplitude'])
         for i in range(Nr):
             for j in range(1, -1, -1):
         
@@ -561,9 +566,11 @@ if experiment == 'before_after_rhythm':
                 def PrepHeatmap(graphtype, decimals=2):
                  
                     # round values to 1 decimal
-                    data_round = np.round(data[['X', 'Y', 'Phase']], decimals=2)  #adjust decimals if trouble with pivoting table
-                    # pivot and transpose for heatmap format
-                    df_heat = data_round.pivot(index='X', columns='Y', values='Phase').transpose()                        
+                    data_round = np.round(data[['X', 'Y', graphtype]], decimals=2)  #adjust decimals if trouble with pivoting table
+                    data_filtered = reject_outliers(data_round, column=graphtype, m=10) 
+                    # pivot and transpose for heatmap format 
+                    df_heat = data_filtered.pivot(index='X', columns='Y', values=graphtype).transpose()
+                                         
                     
                     images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap))
                     axs[i, j].label_outer()
@@ -615,9 +622,10 @@ if experiment == 'before_after_rhythm':
                 im.callbacksSM.connect('changed', update)
 
             ### To save as bitmap png for easy viewing ###
-            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=1000)
+            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
             ### To save as vector svg with fonts editable in Corel ###
-            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', rasterized=True, dpi=300) #if rasterized=True to reduce size or avoid coloramp bug, set-> dpi=300
+            #plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.pdf', format = 'pdf', rasterized = True, dpi=300)
             plt.clf()
             plt.close()
         
@@ -646,7 +654,7 @@ if experiment == 'rhythm':
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
-                axs[i, j].set_xlabel(f'{title}') 
+                axs[i, j].set_xlabel(f'{title}', fontsize=round(int(288/Nr)), labelpad=-5) 
                 axs[i, j].set_xticks([])
                 axs[i, j].set_yticks([])
                 axs[i, j].spines['top'].set_visible(False) # to turn off individual borders 
@@ -660,7 +668,7 @@ if experiment == 'rhythm':
         ### To save as bitmap png for easy viewing ###
         plt.savefig(f'{path}Composite_Trace.png')
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
         plt.clf()
         plt.close()
 
@@ -697,13 +705,13 @@ if experiment == 'rhythm':
                 theta = np.linspace(0.0, 2 * np.pi, N_bins, endpoint=False)     # this just creates number of bins spaced along circle, in radians for polar projection, use as x in histogram
                 width = (2*np.pi) / N_bins                                      # equal width for all bins that covers whole circle
                 
-                polarhist(axh[i, j], mydirlist[counter][-9:])  # function(input data, name of data taken from last 9 chars in path)
+                polarhist(axh[i, j], mydirlist[counter][-9:], pad)  # function(input data, name of data taken from last 9 chars in path)
                 counter += 1
         
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=1000)
+        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=300)
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
         plt.clf()
         plt.close()
                         
@@ -733,7 +741,7 @@ if experiment == 'rhythm':
                 title = mydirlist[counter][-9:]
                   
                 data_h = np.round(data_hl[['X', 'Y', graphtype]], decimals=2)
-                #data_filtered = reject_outliers(data_h, column='Halflife')
+                #data_filtered = reject_outliers(data_h, column=graphtype)
                 # pivot and transpose for heatmap format
                 df_heat = data_h.pivot(index='X', columns='Y', values=graphtype).transpose()
                                                                
@@ -780,9 +788,9 @@ if experiment == 'rhythm':
             im.callbacksSM.connect('changed', update)
             
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=1000)
+        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', rasterized=True, dpi=300) #if using rasterized = True to reduce size, set-> dpi=300
         plt.clf()
         plt.close() 
 
@@ -812,9 +820,8 @@ if experiment == 'decay':
             
             title = mydirlist[counter][-9:]
             
-            #data_h = np.round(data[['X', 'Y', 'Amplitude']], decimals=2)
             data_h = np.round(data_hl[['X', 'Y', graphtype]], decimals=2)
-            #data_filtered = reject_outliers(data_h, column='Halflife')
+            #data_filtered = reject_outliers(data_h, column=graphtype)
             # pivot and transpose for heatmap format
             df_heat = data_h.pivot(index='X', columns='Y', values=graphtype).transpose()
                                                            
@@ -848,8 +855,8 @@ if experiment == 'decay':
     #plt.show() 
     #fig.tight_layout()
     ### To save as bitmap png for easy viewing ###
-    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=1000)
+    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
     ### To save as vector svg with fonts editable in Corel ###
-    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi = 1000
+    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
     plt.clf()
     plt.close()
