@@ -29,7 +29,8 @@ graphtype = 'Trace'
 treatment_time = 76
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
-#For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, works only for 2 cols x 3 or more full rows for now.
+#For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
+# works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
 Nr = 12
 # no. of columns (main folders)
 Nc = 2
