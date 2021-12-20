@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v211201 - fixed bug in bef-after experiments where only amp values were plotted fro Period Trend
+v211220 - more flexible wspace adjustment
 """
 # imports
 import numpy  as np
@@ -23,12 +23,13 @@ import seaborn as sns
 experiment = 'before_after_rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
-graphtype = 'Trend'
+graphtype = 'Trace'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 78
+treatment_time = 76
 
-# set number of rows, i.e. how many individual L and R SCNs were analyzed. For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, works only for 2 cols x 3 or more full rows.
+# set number of rows, i.e. how many individual L and R SCNs were analyzed. 
+#For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, works only for 2 cols x 3 or more full rows for now.
 Nr = 12
 # no. of columns (main folders)
 Nc = 2
@@ -37,9 +38,9 @@ Nw = 3
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots, for 12 rows try -12 and 2, for 2x3 try -10 and 4
 pad = -12
-fontsize = 3
+fontsize = 2
 
-# Adjust spacing between before and after heatmap plots, for SCN -0.9, for CP -0.6
+# Adjust spacing between before and after heatmap plots, for SCN try -0.9, for CP -0.6
 wspace=-0.9
 
 # DO NOT EDIT BELOW
@@ -567,7 +568,7 @@ if experiment == 'before_after_rhythm':
                  
                     # round values to 1 decimal
                     data_round = np.round(data[['X', 'Y', graphtype]], decimals=2)  #adjust decimals if trouble with pivoting table
-                    data_filtered = reject_outliers(data_round, column=graphtype, m=10) 
+                    data_filtered = reject_outliers(data_round, column=graphtype, m=2) 
                     # pivot and transpose for heatmap format 
                     df_heat = data_filtered.pivot(index='X', columns='Y', values=graphtype).transpose()
                                          
@@ -677,7 +678,7 @@ if experiment == 'rhythm':
             
         # no of columns (main folders)
         fig, axh = plt.subplots(Nw, Nc, subplot_kw={'projection': 'polar'})   
-        fig.subplots_adjust(hspace=0.1, wspace=-0.6)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -718,9 +719,9 @@ if experiment == 'rhythm':
         
     if graphtype == 'Phase' or graphtype == 'Amplitude' or graphtype == 'Period' or graphtype == 'Trend':
            
-        ##### Taken frim Matplotlib Example multimage
+        ##### Taken from Matplotlib Example multimage
         fig, axs = plt.subplots(Nw, Nc)
-        fig.subplots_adjust(hspace=0.1, wspace=-0.6)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -800,7 +801,7 @@ if experiment == 'decay':
        
     ##### Taken frim Matplotlib Example multimage
     fig, axs = plt.subplots(Nw, Nc)
-    fig.subplots_adjust(hspace=0.1, wspace=-0.6)  # negative wspace moves left and right close but there is empty space
+    fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
     #fig.suptitle('Phase heatmaps')
     counter = 0
     images = []
