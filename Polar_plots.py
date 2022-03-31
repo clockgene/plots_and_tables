@@ -4,7 +4,7 @@ Created on Thu Mar 31 12:41:50 2022
 
 @author: Martin.Sladek
 
-v1: load circadian parameters table from per2py and create polar phase plot and histogram with circular colormap
+v1: load circadian parameters table from per2py and create polar phase plot and histograms
 """
 
 # imports
@@ -14,30 +14,15 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 import math
-import glob, os, shutil
+import glob, os
 from tkinter import filedialog
 from tkinter import *
-import re
 
+# Use circular colormap (True) or a single color (False) for polar plots? 
+circular = False
 
-# https://jakevdp.github.io/PythonDataScienceHandbook/04.07-customizing-colorbars.html
-def grayscale_cmap(cmap):
-    from matplotlib.colors import LinearSegmentedColormap
-    """Return a grayscale version of the given colormap"""
-    cmap = plt.cm.get_cmap(cmap)
-    colors = cmap(np.arange(cmap.N))
-    
-    # convert RGBA to perceived grayscale luminance
-    # cf. http://alienryderflex.com/hsp.html
-    RGB_weight = [0.299, 0.587, 0.114]
-    luminance = np.sqrt(np.dot(colors[:, :3] ** 2, RGB_weight))
-    colors[:, :3] = luminance[:, np.newaxis]
-        
-    return LinearSegmentedColormap.from_list(cmap.name + "_gray", colors, cmap.N)
-
-
-# CHOOSE color map
-#cmap="viridis"
+# Choose color, e.g. 'blue' or 'red', used for linear histograms and for polar plots if circular=False:
+color = 'black'
 
 
 ##################### Tkinter button for browse/set_dir ################################
@@ -119,7 +104,6 @@ phase_sdseries = 0.1/(data_filt['Rsq'].values.flatten())                        
 
 # NAME
 genes = data_filt['Unnamed: 0'].values.flatten().astype(int)                      # plot profile name as color
-colorcode = plt.cm.nipy_spectral(np.linspace(0, 1, len(genes)))     # gist_ncar, RdYlBu, Accent check>>> https://matplotlib.org/examples/color/colormaps_reference.html
 
 # LENGTH (AMPLITUDE)
 amp = data_filt['Amplitude'].values.flatten()                       # plot filtered Amplitude as length
@@ -134,9 +118,14 @@ phase = np.radians(phaseseries)                                    # if phase is
 #phase_sd = [polarphase(i) for i in phase_sdseries]                 # if using CI or SEM of phase, which is in hours
 phase_sd = [i for i in phase_sdseries]                              # if using Rsq/R2, maybe adjust thickness 
 
+if circular is True:
+    phaseplot_colorcode = plt.cm.nipy_spectral(np.linspace(0, 1, len(genes)))     # gist_ncar, RdYlBu, Accent check>>> https://matplotlib.org/examples/color/colormaps_reference.html
+
+else:
+    phaseplot_colorcode = color
 
 ax = plt.subplot(111, projection='polar')                                                       #plot with polar projection
-bars = ax.bar(phase, amp, width=phase_sd, color=colorcode, bottom=0, alpha=0.8)       #transparency-> alpha=0.5, , rasterized = True, bottom=0.0 to start at center, bottom=amp.max()/3 to start in 1/3 circle
+bars = ax.bar(phase, amp, width=phase_sd, color=phaseplot_colorcode, bottom=0, alpha=0.8)       #transparency-> alpha=0.5, , rasterized = True, bottom=0.0 to start at center, bottom=amp.max()/3 to start in 1/3 circle
 #ax.set_yticklabels([])          # this deletes radial ticks
 ax.set_theta_zero_location('N') # this puts CT=0 theta=0 to North - points upwards
 ax.set_theta_direction(-1)      #reverse direction of theta increases
@@ -164,14 +153,17 @@ N_bins = 47                                                     # how much bins,
 #colorcode = plt.cm.nipy_spectral(np.linspace(0, 1, N_bins))      #gist_ncar, RdYlBu, Accent check>>> https://matplotlib.org/examples/color/colormaps_reference.html
 #colorcode = sns.husl_palette(256)[0::int(round(len(colors) / N_bins, 0))]
 #colorcode = colors[0::int(round(len(colors) / N_bins, 0))] 
-colorcode = sns.husl_palette(256)[0::int(round(len(sns.husl_palette(256)) / N_bins, 0))]
-
+if circular is True:
+    polar_histogram_colorcode = sns.husl_palette(256)[0::int(round(len(sns.husl_palette(256)) / N_bins, 0))]
+else:
+    polar_histogram_colorcode = color
+    
 phase_hist, tick = np.histogram(phase, bins = N_bins, range=(0, 2*np.pi))           # need hist of phase in N bins from 0 to 23h
 theta = np.linspace(0.0, 2 * np.pi, N_bins, endpoint=False)     # this just creates number of bins spaced along circle, in radians for polar projection, use as x in histogram
 width = (2*np.pi) / N_bins                                      # equal width for all bins that covers whole circle
 
 axh = plt.subplot(111, projection='polar')                                                      #plot with polar projection
-bars_h = axh.bar(theta, phase_hist, width=width, color=colorcode, bottom=2, alpha=0.8)          # bottom > 0 to put nice hole in centre
+bars_h = axh.bar(theta, phase_hist, width=width, color=polar_histogram_colorcode, bottom=1, alpha=0.8)          # bottom > 0 to put nice hole in centre
 
 axh.set_yticklabels([])          # this deletes radial ticks
 axh.set_theta_zero_location('N') # this puts CT=0 theta=0 to North - points upwards
@@ -226,7 +218,7 @@ y_coord = ylim[1] - (ylim[1]/8)
 
 allplot = sns.FacetGrid(data_filt_per)    
 #plots PDF when kde=True, can be >1, https://stats.stackexchange.com/questions/4220/can-a-probability-distribution-value-exceeding-1-be-ok
-allplot = allplot.map(sns.distplot, y, kde=False)  #, bins=n, bins='sqrt' for Square root of n, None for Freedman–Diaconis rule
+allplot = allplot.map(sns.distplot, y, kde=False, color=color)  #, bins=n, bins='sqrt' for Square root of n, None for Freedman–Diaconis rule
 plt.xlim(xlim)
 #plt.legend(title='Sex')
 plt.xlabel(x_lab)
@@ -256,7 +248,7 @@ y_coord = ylim[1] - (ylim[1]/8)
 
 allplot = sns.FacetGrid(data_filt_per)    
 #plots PDF when kde=True, can be >1, https://stats.stackexchange.com/questions/4220/can-a-probability-distribution-value-exceeding-1-be-ok
-allplot = allplot.map(sns.distplot, y, kde=False)  #, bins=n, bins='sqrt' for Square root of n, None for Freedman–Diaconis rule
+allplot = allplot.map(sns.distplot, y, kde=False, color=color)  #, bins=n, bins='sqrt' for Square root of n, None for Freedman–Diaconis rule
 plt.xlim(xlim)
 #plt.legend(title='Sex')
 plt.xlabel(x_lab)
