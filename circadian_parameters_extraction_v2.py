@@ -2,14 +2,15 @@
 """
 Created on Thu Apr 14 13:25:58 2022
 @author: Martin.Sladek
-v.2022.04.14
-extract all parameters from all subfolders and export as csv + make violin plots
+v.2022.04.22
+remove outliers from violin plots
 """
 
 import pandas as pd
 import glob, os
 import tkinter as tk
 from tkinter import filedialog
+import numpy  as np
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -17,10 +18,10 @@ import matplotlib.pyplot as plt
 #import scikit_posthocs as sp
 
 # was the experiment without treatment (treat = 0) or with treatment (treat = 1)?
-treat = 0
+treat = 1
 
 # Set name and nameend variables, depends on length of folder names
-name = -6               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
+name = -9               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
 nameend = None          # None, or try -4
     
 ##################### Tkinter button for browse/set_dir ################################
@@ -79,6 +80,15 @@ for mydir in mydirlist:
 
 df.to_csv(f'{path}Composite_parameters.csv')
 ticks = [i[name+1:nameend] for i in mydirlist]
+
+
+# replace outliers with nans
+for col in df.columns.values:
+    # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
+    iqr = df[col].quantile(0.75) - df[col].quantile(0.25)
+    lim = np.abs((df[col] - df[col].median()) / iqr) < 2.22
+    df.loc[:, col] = df[col].where(lim, np.nan)     
+
 
 # Violin plot from wide-format dataframe 
 def violin(data, title, ticks=ticks):
