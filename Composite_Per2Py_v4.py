@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220405 - filtering flexible
+v20220422 - filtering adjusted, disabled for Phase
 """
 # imports
 import numpy  as np
@@ -14,35 +14,35 @@ import math
 import glob, os
 from tkinter import filedialog
 from tkinter import *
-import re
 from matplotlib import colors
-import seaborn as sns
+#import re
+#import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
 experiment = 'before_after_rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
-graphtype = 'Trend'
+graphtype = 'Phase'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 70
+treatment_time = 74
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
 # works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
-Nr = 8
+Nr = 6
 # no. of columns (main folders)
 Nc = 2
 # no. of rows (subfolders in each main folder)
-Nw = 4
-
-# Adjust how close and how big labels are in Phase_Histogram, depends on number of plots, for 12 rows try -12 and 2, for 2x3 try -10 and 4
-pad = -9
-fontsize = 2
+Nw = 3
 
 # Adjust spacing between before and after heatmap plots, for SCN try -0.9, for CP -0.6
-wspace=-0.9
+wspace=-0.8
+
+# Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
+pad = -13
+fontsize = 4
 
 # Adjust outlier filtering, try iqr_value 2.22 or more 
 iqr_value = 8.88
@@ -577,16 +577,16 @@ if experiment == 'before_after_rhythm':
                     # FILTER outliers by interquantile range filter: within 2.22 IQR (equiv. to z-score < 3), but too stringent for LV200, try higher iqr_value
                     outlier_reindex = ~(np.isnan(data_round[graphtype]))    
                     data_filtered = data[data.columns[:].tolist()][outlier_reindex]  
-                    #cols = data_filt.select_dtypes('number').columns   # pick only numeric columns
-                    #cols = [graphtype]    # pick hand selected columns
+                    # cols = data_filt.select_dtypes('number').columns   # pick only numeric columns
+                    # cols = [graphtype]    # pick hand selected columns
                     df_sub = data.loc[:, graphtype]
                     iqr = df_sub.quantile(0.75) - df_sub.quantile(0.25)
                     lim = np.abs((df_sub - df_sub.median()) / iqr) < iqr_value
-                    # replace outliers with nan
-                    data_filtered.loc[:, graphtype] = df_sub.where(lim, np.nan)   
-                    # replace outlier-caused nans with median values    
-                    data_filtered[graphtype].fillna(data_filtered[graphtype].median(), inplace=True)                   
-                    
+                    # replace outliers with nan, except for Phase, where it is not needed
+                    if graphtype != 'Phase':
+                        data_filtered.loc[:, graphtype] = df_sub.where(lim, np.nan)   
+                    # replace outlier-caused nans with median values
+                    # data_filtered[graphtype].fillna(data_filtered[graphtype].median(), inplace=True)                               
                     
                     #data_filtered = reject_outliers(data_round, column=graphtype, m=10)   # alternative way to filter outliers
                     # pivot and transpose for heatmap format 
@@ -763,8 +763,21 @@ if experiment == 'rhythm':
                   
                 data_h = np.round(data_hl[['X', 'Y', graphtype]], decimals=2)
                 #data_filtered = reject_outliers(data_h, column=graphtype)
+                
+                # FILTER outliers by interquantile range filter: within 2.22 IQR (equiv. to z-score < 3), but too stringent for LV200, try higher iqr_value
+                outlier_reindex = ~(np.isnan(data_h[graphtype]))    
+                data_filtered = data[data_h.columns[:].tolist()][outlier_reindex]  
+                df_sub = data_filtered.loc[:, graphtype]
+                iqr = df_sub.quantile(0.75) - df_sub.quantile(0.25)
+                lim = np.abs((df_sub - df_sub.median()) / iqr) < iqr_value
+                # replace outliers with nan, except for Phase, where it is not needed
+                if graphtype != 'Phase':
+                    data_filtered.loc[:, graphtype] = df_sub.where(lim, np.nan)   
+                # replace outlier-caused nans with median values
+                # data_filtered[graphtype].fillna(data_filtered[graphtype].median(), inplace=True) 
+             
                 # pivot and transpose for heatmap format
-                df_heat = data_h.pivot(index='X', columns='Y', values=graphtype).transpose()
+                df_heat = data_filtered.pivot(index='X', columns='Y', values=graphtype).transpose()
                                                                
                 images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap))
                 axs[i, j].label_outer()
