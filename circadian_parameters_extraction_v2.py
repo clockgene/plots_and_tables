@@ -82,20 +82,13 @@ df.to_csv(f'{path}Composite_parameters.csv')
 ticks = [i[name+1:nameend] for i in mydirlist]
 
 
-# replace outliers with nans
-for col in df.columns.values:
-    # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
-    iqr = df[col].quantile(0.75) - df[col].quantile(0.25)
-    lim = np.abs((df[col] - df[col].median()) / iqr) < 2.22
-    df.loc[:, col] = df[col].where(lim, np.nan)     
-
-
 # Violin plot from wide-format dataframe 
-def violin(data, title, ticks=ticks):
-    title = title
+def violin(data, title, ticks=ticks, remove_outliers=True):
+    title = title               
     ax = sns.violinplot(data=data)
     plt.title(title, fontsize=14)
     ax.axes.xaxis.set_ticklabels(ticks)
+    plt.xticks(rotation=90)
     plt.savefig(f'{path}Violin_{title}.png', format = 'png', bbox_inches = 'tight')   
     plt.savefig(f'{path}Violin_{title}.svg', format = 'svg', bbox_inches = 'tight')
     plt.clf()
@@ -103,9 +96,17 @@ def violin(data, title, ticks=ticks):
 
 i = len(mydirlist)
 
+violin(df.iloc[:, 2*i:3*i], 'Phase')
+
+# For other parameters, first replace outliers with nans
+for col in df.columns.values:
+    # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
+    iqr = df[col].quantile(0.75) - df[col].quantile(0.25)
+    lim = np.abs((df[col] - df[col].median()) / iqr) < 2.22
+    df.loc[:, col] = df[col].where(lim, np.nan)
+
 violin(df.iloc[:, 0:i], 'Period')
 violin(df.iloc[:, i:2*i], 'Amplitude')
-violin(df.iloc[:, 2*i:3*i], 'Phase')
 violin(df.iloc[:, 3*i:4*i], 'Trend')
 violin(df.iloc[:, 4*i:5*i], 'Decay')
 violin(df.iloc[:, 5*i:6*i], 'Rsq')
