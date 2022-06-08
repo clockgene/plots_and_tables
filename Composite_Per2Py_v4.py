@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220422 - filtering adjusted, disabled for Phase
+v20220608 - filtering bug removed
 """
 # imports
 import numpy  as np
@@ -20,22 +20,22 @@ from matplotlib import colors
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'before_after_rhythm'
+experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
 graphtype = 'Phase'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 74
+treatment_time = 0
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
 # works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
-Nr = 6
+Nr = 10
 # no. of columns (main folders)
 Nc = 2
 # no. of rows (subfolders in each main folder)
-Nw = 3
+Nw = 5
 
 # Adjust spacing between before and after heatmap plots, for SCN try -0.9, for CP -0.6
 wspace=-0.8
@@ -766,7 +766,7 @@ if experiment == 'rhythm':
                 
                 # FILTER outliers by interquantile range filter: within 2.22 IQR (equiv. to z-score < 3), but too stringent for LV200, try higher iqr_value
                 outlier_reindex = ~(np.isnan(data_h[graphtype]))    
-                data_filtered = data[data_h.columns[:].tolist()][outlier_reindex]  
+                data_filtered = data_h[data_h.columns[:].tolist()][outlier_reindex]  
                 df_sub = data_filtered.loc[:, graphtype]
                 iqr = df_sub.quantile(0.75) - df_sub.quantile(0.25)
                 lim = np.abs((df_sub - df_sub.median()) / iqr) < iqr_value
