@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220608 - filtering bug removed
+v20220608 - filtering bug removed, hspace flexible, rasterized moved to artist, im.callbacks
 """
 # imports
 import numpy  as np
@@ -23,7 +23,7 @@ from matplotlib import colors
 experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
-graphtype = 'Phase'
+graphtype = 'Trace'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
@@ -37,8 +37,9 @@ Nc = 2
 # no. of rows (subfolders in each main folder)
 Nw = 5
 
-# Adjust spacing between before and after heatmap plots, for SCN try -0.9, for CP -0.6
-wspace=-0.8
+# Adjust spacing between before left-right and up-down heatmap plots, for SCN try -0.9, for CP -0.6
+wspace=-0.7
+hspace=0.3
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
 pad = -13
@@ -497,7 +498,7 @@ if experiment == 'before_after_rhythm':
         ### To save as bitmap png for easy viewing ###
         plt.savefig(f'{path}Composite_Trace.png')
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
+        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg')
         plt.clf()
         plt.close()
         
@@ -506,7 +507,7 @@ if experiment == 'before_after_rhythm':
         
         # this loop assumes folder structure with multiple SCN folders and 2 subfolders (before and after treatment, first is after due to name)             
         fig, axh = plt.subplots(Nr, Ncc, subplot_kw={'projection': 'polar'})   
-        fig.subplots_adjust(hspace=0.3, wspace=wspace)            # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)            # negative wspace moves left and right close but there is empty space
         counter = 0
         for i in range(Nr):        
             for j in range(1, -1, -1):
@@ -537,9 +538,9 @@ if experiment == 'before_after_rhythm':
         #plt.show() 
         #fig.tight_layout()
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=300)
+        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=600)
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
+        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg', dpi=600)
         plt.clf()
         plt.close()
 
@@ -550,7 +551,7 @@ if experiment == 'before_after_rhythm':
         # no of columns
         #Nc = 2
         fig, axs = plt.subplots(Nr, Ncc)
-        fig.subplots_adjust(hspace=0.3, wspace=wspace)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -593,7 +594,7 @@ if experiment == 'before_after_rhythm':
                     df_heat = data_filtered.pivot(index='X', columns='Y', values=graphtype).transpose()
                                          
                     
-                    images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap))
+                    images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap, rasterized=True))
                     axs[i, j].label_outer()
                     axs[i, j].set_yticklabels([])
                     axs[i, j].set_xticklabels([]) 
@@ -640,13 +641,14 @@ if experiment == 'before_after_rhythm':
 
         
             for im in images:
-                im.callbacksSM.connect('changed', update)
+                # im.callbacksSM.connect('changed', update)  # in older matplotlib
+                im.callbacks.connect('changed', update)
 
             ### To save as bitmap png for easy viewing ###
-            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
+            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=600)
             ### To save as vector svg with fonts editable in Corel ###
-            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', rasterized=True, dpi=300) #if rasterized=True to reduce size or avoid coloramp bug, set-> dpi=300
-            #plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.pdf', format = 'pdf', rasterized = True, dpi=300)
+            plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', dpi=600)
+            #plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.pdf', format = 'pdf', dpi=300)
             plt.clf()
             plt.close()
         
@@ -698,7 +700,7 @@ if experiment == 'rhythm':
             
         # no of columns (main folders)
         fig, axh = plt.subplots(Nw, Nc, subplot_kw={'projection': 'polar'})   
-        fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -730,9 +732,9 @@ if experiment == 'rhythm':
                 counter += 1
         
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=300)
+        plt.savefig(f'{path}Composite_Histogram_Phase.png', dpi=600)
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
+        plt.savefig(f'{path}Composite_Histogram_Phase.svg', format = 'svg', dpi=600)
         plt.clf()
         plt.close()
                         
@@ -741,7 +743,7 @@ if experiment == 'rhythm':
            
         ##### Taken from Matplotlib Example multimage
         fig, axs = plt.subplots(Nw, Nc)
-        fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -779,7 +781,7 @@ if experiment == 'rhythm':
                 # pivot and transpose for heatmap format
                 df_heat = data_filtered.pivot(index='X', columns='Y', values=graphtype).transpose()
                                                                
-                images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap))
+                images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap, rasterized=True))
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
@@ -804,7 +806,7 @@ if experiment == 'rhythm':
             
             cbar = fig.colorbar(images[0], ticks=[45, 90, 135, 180, 225, 270, 315], ax=axs)
             cbar.ax.set_ylabel('Phase (h)', rotation=270, labelpad=12) # fontsize=5, 
-            cbar.ax.set_yticklabels((3, 6, 9, 12, 15, 18, 21)) #, fontsize=11              
+            cbar.ax.set_yticklabels((3, 6, 9, 12, 15, 18, 21)) #, fontsize=11       
             
         else:
             
@@ -819,12 +821,14 @@ if experiment == 'rhythm':
             cbar.ax.set_ylabel(graphtype, rotation=270, labelpad=11)       
            
         for im in images:
-            im.callbacksSM.connect('changed', update)
+            im.callbacks.connect('changed', update)
             
         ### To save as bitmap png for easy viewing ###
-        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
+        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=600) # 
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', rasterized=True, dpi=300) #if using rasterized = True to reduce size, set-> dpi=300
+        # plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', rasterized = True, dpi=600)
+        plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', dpi=600)
+        # plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.pdf', dpi=600)
         plt.clf()
         plt.close() 
 
@@ -834,7 +838,7 @@ if experiment == 'decay':
        
     ##### Taken frim Matplotlib Example multimage
     fig, axs = plt.subplots(Nw, Nc)
-    fig.subplots_adjust(hspace=0.1, wspace=wspace)  # negative wspace moves left and right close but there is empty space
+    fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
     #fig.suptitle('Phase heatmaps')
     counter = 0
     images = []
@@ -859,7 +863,7 @@ if experiment == 'decay':
             # pivot and transpose for heatmap format
             df_heat = data_h.pivot(index='X', columns='Y', values=graphtype).transpose()
                                                            
-            images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap))
+            images.append(axs[i, j].imshow(df_heat.to_numpy(), cmap=cmap, rasterized=True))
             axs[i, j].label_outer()
             axs[i, j].set_yticklabels([])
             axs[i, j].set_xticklabels([]) 
@@ -884,13 +888,13 @@ if experiment == 'decay':
     cbar.ax.set_ylabel(graphtype, rotation=270, labelpad=11)
     
     for im in images:
-        im.callbacksSM.connect('changed', update)
+        im.callbacks.connect('changed', update)
     
     #plt.show() 
     #fig.tight_layout()
     ### To save as bitmap png for easy viewing ###
-    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=300)
+    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.png', dpi=600)
     ### To save as vector svg with fonts editable in Corel ###
-    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
+    plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', dpi=600)
     plt.clf()
     plt.close()
