@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220608 - filtering bug removed, hspace flexible, rasterized moved to artist, im.callbacks
+v20220902 - fixed different subplot sizes via sharex/y
 """
 # imports
 import numpy  as np
@@ -20,32 +20,32 @@ from matplotlib import colors
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'rhythm'
+experiment = 'before_after_rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
 graphtype = 'Trace'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 0
+treatment_time = 72
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
 # works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
-Nr = 10
-# no. of columns (main folders)
+Nr = 6
+# no. of columns (main folders or main folders/Nw)
 Nc = 2
-# no. of rows (subfolders in each main folder)
-Nw = 5
+# no. of rows (either subfolders in each main folder, or main folders/Nc)
+Nw = 3
 
 # Adjust spacing between before left-right and up-down heatmap plots, for SCN try -0.9, for CP -0.6
-wspace=-0.7
+wspace=-0.6
 hspace=0.3
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
 pad = -13
 fontsize = 4
 
-# Adjust outlier filtering, try iqr_value 2.22 or more 
+# Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 (keeps biggest outliers) esp. for Amplitude
 iqr_value = 8.88
 
 
@@ -550,7 +550,7 @@ if experiment == 'before_after_rhythm':
         ##### Taken frim Matplotlib Example multimage
         # no of columns
         #Nc = 2
-        fig, axs = plt.subplots(Nr, Ncc)
+        fig, axs = plt.subplots(Nr, Ncc, sharey=True, sharex=True)
         fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
@@ -742,8 +742,8 @@ if experiment == 'rhythm':
     if graphtype == 'Phase' or graphtype == 'Amplitude' or graphtype == 'Period' or graphtype == 'Trend':
            
         ##### Taken from Matplotlib Example multimage
-        fig, axs = plt.subplots(Nw, Nc)
-        fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
+        fig, axs = plt.subplots(Nw, Nc, sharey=True, sharex=True)
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space  
         #fig.suptitle('Phase heatmaps')
         counter = 0
         images = []
@@ -837,7 +837,7 @@ if experiment == 'rhythm':
 if experiment == 'decay':    
        
     ##### Taken frim Matplotlib Example multimage
-    fig, axs = plt.subplots(Nw, Nc)
+    fig, axs = plt.subplots(Nw, Nc, sharey=True, sharex=True)
     fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
     #fig.suptitle('Phase heatmaps')
     counter = 0
