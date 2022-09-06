@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220902 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots
+v20220906 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots, median or all traces with cutoffs
 """
 # imports
 import numpy  as np
@@ -19,18 +19,25 @@ import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'rhythm'
+experiment = 'before_after_rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters ('Pars.' do not need exp. specified and work on any n of folders)
-graphtype = 'Parameters'
+graphtype = 'Trace'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 72
+treatment_time = 51
+
+# True - Plot all individual roi luminescence traces. False - Plot just median trace.
+Plot_All_Traces = False
+
+# cut first x hours before and leave y hours total (cutoff = 12, cutoff2 = None --- default)
+cutoff = 12
+cutoff2 = None
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
 # works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
-Nr = 6
+Nr = 5
 # no. of columns (main folders or main folders/Nw)
 Nc = 2
 # no. of rows (either subfolders in each main folder, or main folders/Nc)
@@ -41,8 +48,8 @@ wspace=-0.6
 hspace=0.3
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -13
-fontsize = 4
+pad = -11
+fontsize = 5
 
 # Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 (keeps biggest outliers) esp. for Amplitude
 iqr_value = 8.88
@@ -474,10 +481,18 @@ if experiment == 'before_after_rhythm':
                 print(mydir)
                 data = pd.read_csv(glob.glob(f'{mydir}*cosine.csv')[0])
                 datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
+                # datap = pd.read_csv(glob.glob(f'{mydir}*oscillatory_params.csv')[0])
                 title = mydirlist[counter][-9:]
-                               
-                axs[i, j].plot(datar.index[12:], datar[12:].median(axis=1))  # plot without the first 12h, or adjust accordingly
-                axs[i, j].plot(data.index[12:], data[12:].median(axis=1), color='r')
+                                               
+                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                
+                if Plot_All_Traces is True:                
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
+                        # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])  # in future, try filtering according to Rsq or amp
+                else:
+                    axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1))                
+                                
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
@@ -526,7 +541,9 @@ if experiment == 'before_after_rhythm':
                 
                 outlier_reindex = ~(np.isnan(data['Amplitude']))    
                 data_filt = data[data.columns[:].tolist()][outlier_reindex]                                 # data w/o amp outliers    
-                phaseseries = data_filt['Phase'].values.flatten()                                           # plot Phase
+                phaseseries = data_filt['Phase'].values.flatten()                                           # plot all Phase
+                # phaseseries = data_filt.loc[(data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)) & (data_filt['Amplitude'] > data_filt['Amplitude'].quantile(0.25)),'Phase'].values.flatten() # plot quantile filtered phase
+                
                 phase_sdseries = 0.1/(data_filt['Rsq'].values.flatten())    
                 phase = np.radians(phaseseries)                                    # if phase is in degrees (per2py))
                 
@@ -675,8 +692,15 @@ if experiment == 'rhythm':
                 datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
                 title = mydirlist[counter][-9:]
                                
-                axs[i, j].plot(datar.index, datar.median(axis=1))
-                axs[i, j].plot(data.index, data.median(axis=1), color='r')
+                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                
+                if Plot_All_Traces is True:                
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
+                        # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])  # in future, try filtering according to Rsq or amp
+                else:
+                    axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1))     
+                    
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
