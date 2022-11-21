@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220906 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots, median or all traces with cutoffs
+v20221121 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots, median or all traces with cutoffs, copies gifs
 """
 # imports
 import numpy  as np
@@ -19,16 +19,17 @@ import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'before_after_rhythm'
+experiment = 'rhythm'
 
-# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters ('Pars.' do not need exp. specified and work on any n of folders)
-graphtype = 'Trace'
+# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters 
+# ('Pars.' do not need exp. specified and work on any n of folders). Also copies animated gif files if graphtype id GIFS
+graphtype = 'GIFS'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 51
+treatment_time = 0
 
 # True - Plot all individual roi luminescence traces. False - Plot just median trace.
-Plot_All_Traces = False
+Plot_All_Traces = True
 
 # cut first x hours before and leave y hours total (cutoff = 12, cutoff2 = None --- default)
 cutoff = 12
@@ -37,7 +38,7 @@ cutoff2 = None
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
 # works only for 2 cols x 3 or more full rows for now - if less samples, duplicate them so there are 6.
-Nr = 5
+Nr = 6
 # no. of columns (main folders or main folders/Nw)
 Nc = 2
 # no. of rows (either subfolders in each main folder, or main folders/Nc)
@@ -984,3 +985,38 @@ if graphtype == 'Parameters':
     violin(df2.iloc[:, 3*i:4*i], 'Trend')
     violin(df2.iloc[:, 4*i:5*i], 'Decay')
     violin(df2.iloc[:, 5*i:6*i], 'Rsq')
+    
+# copy or move and rename animated gif files from all TIFF folders to anal folder
+if graphtype == 'GIFS': 
+    
+    import shutil
+    import re
+
+    # Specify FOLDER
+    root = Tk()
+    folder_path = StringVar()
+    lbl1 = Label(master=root, textvariable=folder_path)
+    lbl1.grid(row=0, column=1)
+    buttonBrowse = Button(text="Browse to TIFFs", command=browse_button)
+    buttonBrowse.grid()
+    mainloop()
+    tiff_path = os.getcwd() + '\\'
+    
+    depth2 = tiff_path.count(os.sep)
+    
+    tiff_paths = []
+    for root, dirs, files in os.walk(tiff_path, topdown=False):
+        for files in dirs:        
+            folder = os.path.join(root, files)
+            if folder.count(os.sep) == depth2 + 2:      # gif is in mod2 folder
+                tiff_paths.append(folder)
+    
+    counter = 0
+    for oldfolder in tiff_paths:
+        for root, dirs, files in os.walk(oldfolder):
+            for name in files:
+                if name.endswith('gif'):
+                    newname = mydirlist[counter][-4:]
+                    # os.rename(os.path.join(root, name), f'{path}{newname}')
+                    shutil.copy(os.path.join(root, name), f'{path}{newname}.gif')
+        counter += 1
