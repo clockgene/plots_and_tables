@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20220902 - fixed different subplot sizes via sharex/y
+v20221121 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots, median or all traces with cutoffs, copies gifs
 """
 # imports
 import numpy  as np
@@ -15,18 +15,25 @@ import glob, os
 from tkinter import filedialog
 from tkinter import *
 from matplotlib import colors
-#import re
-#import seaborn as sns
+import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'before_after_rhythm'
+experiment = 'rhythm'
 
-# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, or Trace
-graphtype = 'Trace'
+# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters 
+# ('Pars.' do not need exp. specified and work on any n of folders). Also copies animated gif files if graphtype id GIFS
+graphtype = 'GIFS'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 72
+treatment_time = 0
+
+# True - Plot all individual roi luminescence traces. False - Plot just median trace.
+Plot_All_Traces = True
+
+# cut first x hours before and leave y hours total (cutoff = 12, cutoff2 = None --- default)
+cutoff = 12
+cutoff2 = None
 
 # set number of rows, i.e. how many individual L and R SCNs were analyzed. 
 #For experiment = 'rhythm' or 'decay', need Nc and Nw variables as well, 
@@ -42,11 +49,15 @@ wspace=-0.6
 hspace=0.3
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -13
-fontsize = 4
+pad = -11
+fontsize = 5
 
 # Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 (keeps biggest outliers) esp. for Amplitude
 iqr_value = 8.88
+
+# For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
+name = -5               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
+nameend = None          # None, or try -4
 
 
 # DO NOT EDIT BELOW
@@ -471,10 +482,18 @@ if experiment == 'before_after_rhythm':
                 print(mydir)
                 data = pd.read_csv(glob.glob(f'{mydir}*cosine.csv')[0])
                 datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
+                # datap = pd.read_csv(glob.glob(f'{mydir}*oscillatory_params.csv')[0])
                 title = mydirlist[counter][-9:]
-                               
-                axs[i, j].plot(datar.index[12:], datar[12:].median(axis=1))  # plot without the first 12h, or adjust accordingly
-                axs[i, j].plot(data.index[12:], data[12:].median(axis=1), color='r')
+                                               
+                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                
+                if Plot_All_Traces is True:                
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
+                        # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])  # in future, try filtering according to Rsq or amp
+                else:
+                    axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1))                
+                                
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
@@ -523,7 +542,9 @@ if experiment == 'before_after_rhythm':
                 
                 outlier_reindex = ~(np.isnan(data['Amplitude']))    
                 data_filt = data[data.columns[:].tolist()][outlier_reindex]                                 # data w/o amp outliers    
-                phaseseries = data_filt['Phase'].values.flatten()                                           # plot Phase
+                phaseseries = data_filt['Phase'].values.flatten()                                           # plot all Phase
+                # phaseseries = data_filt.loc[(data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)) & (data_filt['Amplitude'] > data_filt['Amplitude'].quantile(0.25)),'Phase'].values.flatten() # plot quantile filtered phase
+                
                 phase_sdseries = 0.1/(data_filt['Rsq'].values.flatten())    
                 phase = np.radians(phaseseries)                                    # if phase is in degrees (per2py))
                 
@@ -672,8 +693,15 @@ if experiment == 'rhythm':
                 datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
                 title = mydirlist[counter][-9:]
                                
-                axs[i, j].plot(datar.index, datar.median(axis=1))
-                axs[i, j].plot(data.index, data.median(axis=1), color='r')
+                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                
+                if Plot_All_Traces is True:                
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
+                        # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])  # in future, try filtering according to Rsq or amp
+                else:
+                    axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1))     
+                    
                 axs[i, j].label_outer()
                 axs[i, j].set_yticklabels([])
                 axs[i, j].set_xticklabels([]) 
@@ -898,3 +926,97 @@ if experiment == 'decay':
     plt.savefig(f'{path}Composite_Heatmap_XY_{graphtype}.svg', format = 'svg', dpi=600)
     plt.clf()
     plt.close()
+    
+
+# circadian_parameters_extraction_v2 script here  
+if graphtype == 'Parameters':   
+    
+    df2 = pd.DataFrame()
+    
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Period' + str(mydir[name:nameend])] = data2['Period']
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Amplitude' + str(mydir[name:nameend])] = data2['Amplitude']
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Phase' + str(mydir[name:nameend])] = data2['Phase']
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Trend' + str(mydir[name:nameend])] = data2['Trend']
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Decay' + str(mydir[name:nameend])] = data2['Decay']
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
+        df2['Rsq' + str(mydir[name:nameend])] = data2['Rsq']
+    
+    
+    df2.to_csv(f'{path}Composite_parameters.csv')
+    ticks = [i[name+1:nameend] for i in mydirlist]
+    
+    
+    # Violin plot from wide-format dataframe 
+    def violin(data2, title, ticks=ticks, remove_outliers=True):
+        title = title               
+        ax = sns.violinplot(data=data2)
+        plt.title(title, fontsize=14)
+        ax.axes.xaxis.set_ticklabels(ticks)
+        plt.xticks(rotation=90)
+        plt.savefig(f'{path}Violin_{title}.png', format = 'png', bbox_inches = 'tight')   
+        plt.savefig(f'{path}Violin_{title}.svg', format = 'svg', bbox_inches = 'tight')
+        plt.clf()
+        plt.close()
+    
+    i = len(mydirlist)
+    
+    violin(df2.iloc[:, 2*i:3*i], 'Phase')
+    
+    # For other parameters, first replace outliers with nans
+    for col in df2.columns.values:
+        # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
+        iqr = df2[col].quantile(0.75) - df2[col].quantile(0.25)
+        lim = np.abs((df2[col] - df2[col].median()) / iqr) < 2.22
+        df2.loc[:, col] = df2[col].where(lim, np.nan)
+    
+    violin(df2.iloc[:, 0:i], 'Period')
+    violin(df2.iloc[:, i:2*i], 'Amplitude')
+    violin(df2.iloc[:, 3*i:4*i], 'Trend')
+    violin(df2.iloc[:, 4*i:5*i], 'Decay')
+    violin(df2.iloc[:, 5*i:6*i], 'Rsq')
+    
+# copy or move and rename animated gif files from all TIFF folders to anal folder
+if graphtype == 'GIFS': 
+    
+    import shutil
+    import re
+
+    # Specify FOLDER
+    root = Tk()
+    folder_path = StringVar()
+    lbl1 = Label(master=root, textvariable=folder_path)
+    lbl1.grid(row=0, column=1)
+    buttonBrowse = Button(text="Browse to TIFFs", command=browse_button)
+    buttonBrowse.grid()
+    mainloop()
+    tiff_path = os.getcwd() + '\\'
+    
+    depth2 = tiff_path.count(os.sep)
+    
+    tiff_paths = []
+    for root, dirs, files in os.walk(tiff_path, topdown=False):
+        for files in dirs:        
+            folder = os.path.join(root, files)
+            if folder.count(os.sep) == depth2 + 2:      # gif is in mod2 folder
+                tiff_paths.append(folder)
+    
+    counter = 0
+    for oldfolder in tiff_paths:
+        for root, dirs, files in os.walk(oldfolder):
+            for name in files:
+                if name.endswith('gif'):
+                    newname = mydirlist[counter][-4:]
+                    # os.rename(os.path.join(root, name), f'{path}{newname}')
+                    shutil.copy(os.path.join(root, name), f'{path}{newname}.gif')
+        counter += 1
