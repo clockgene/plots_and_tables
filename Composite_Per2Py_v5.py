@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20221121 - fixed different subplot sizes via sharex/y, added circ pars extraction for csv and violin plots, median or all traces with cutoffs, copies gifs
+v20221123 - copies gifs, costumizable heatmap size via sharex/y
 """
 # imports
 import numpy  as np
@@ -23,7 +23,7 @@ experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters 
 # ('Pars.' do not need exp. specified and work on any n of folders). Also copies animated gif files if graphtype id GIFS
-graphtype = 'GIFS'
+graphtype = 'Period'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
@@ -48,9 +48,14 @@ Nw = 3
 wspace=-0.6
 hspace=0.3
 
+# Same size heatmaps for all explants (True) or or adjust size to fit whole heatmap (False)?
+# For explants with widely different size, sometimes True results in only partially plotted heatmap.
+sharex = False
+sharey = False
+
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -11
-fontsize = 5
+pad = -13
+fontsize = 4
 
 # Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 (keeps biggest outliers) esp. for Amplitude
 iqr_value = 8.88
@@ -571,7 +576,7 @@ if experiment == 'before_after_rhythm':
         ##### Taken frim Matplotlib Example multimage
         # no of columns
         #Nc = 2
-        fig, axs = plt.subplots(Nr, Ncc, sharey=True, sharex=True)
+        fig, axs = plt.subplots(Nr, Ncc, sharey=sharey, sharex=sharex)
         fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
         #fig.suptitle('Phase heatmaps')
         counter = 0
@@ -770,7 +775,7 @@ if experiment == 'rhythm':
     if graphtype == 'Phase' or graphtype == 'Amplitude' or graphtype == 'Period' or graphtype == 'Trend':
            
         ##### Taken from Matplotlib Example multimage
-        fig, axs = plt.subplots(Nw, Nc, sharey=True, sharex=True)
+        fig, axs = plt.subplots(Nw, Nc, sharey=sharey, sharex=sharex)
         fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space  
         #fig.suptitle('Phase heatmaps')
         counter = 0
@@ -865,7 +870,7 @@ if experiment == 'rhythm':
 if experiment == 'decay':    
        
     ##### Taken frim Matplotlib Example multimage
-    fig, axs = plt.subplots(Nw, Nc, sharey=True, sharex=True)
+    fig, axs = plt.subplots(Nw, Nc, sharey=sharey, sharex=sharex)
     fig.subplots_adjust(hspace=hspace, wspace=wspace)  # negative wspace moves left and right close but there is empty space
     #fig.suptitle('Phase heatmaps')
     counter = 0
@@ -990,7 +995,6 @@ if graphtype == 'Parameters':
 if graphtype == 'GIFS': 
     
     import shutil
-    import re
 
     # Specify FOLDER
     root = Tk()
