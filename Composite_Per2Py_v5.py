@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20221123 - copies gifs, costumizable heatmap size via sharex/y
+v20230113 - copies gifs, costumizable heatmap size via sharex/y, better gif newname
 """
 # imports
 import numpy  as np
@@ -19,14 +19,14 @@ import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'rhythm'
+experiment = 'before_after_rhythm'
 
-# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters 
-# ('Pars.' do not need exp. specified and work on any n of folders). Also copies animated gif files if graphtype id GIFS
-graphtype = 'Period'
+# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS
+# (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
+graphtype = 'Parameters'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 0
+treatment_time = 69
 
 # True - Plot all individual roi luminescence traces. False - Plot just median trace.
 Plot_All_Traces = True
@@ -45,19 +45,19 @@ Nc = 2
 Nw = 3
 
 # Adjust spacing between before left-right and up-down heatmap plots, for SCN try -0.9, for CP -0.6
-wspace=-0.6
+wspace=-0.4
 hspace=0.3
 
 # Same size heatmaps for all explants (True) or or adjust size to fit whole heatmap (False)?
 # For explants with widely different size, sometimes True results in only partially plotted heatmap.
-sharex = False
-sharey = False
+sharex = True
+sharey = True
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -13
-fontsize = 4
+pad = -11
+fontsize = 6
 
-# Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 (keeps biggest outliers) esp. for Amplitude
+# Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 or more (bigger iqr keeps bigger outliers) esp. for Amplitude
 iqr_value = 8.88
 
 # For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
@@ -476,7 +476,7 @@ if experiment == 'before_after_rhythm':
         
         import matplotlib.patches as mpatches     
         
-        fig, axs = plt.subplots(Nr, Ncc, figsize=(20,40))        # gridspec_kw={'width_ratios':[2,1]} This sets different siye for left and right subplots.
+        fig, axs = plt.subplots(Nr, Ncc, figsize=(20,40))   # gridspec_kw={'width_ratios':[2,1]} This sets different size for left and right subplots.
         
         counter = 0
         images = []
@@ -1020,7 +1020,8 @@ if graphtype == 'GIFS':
         for root, dirs, files in os.walk(oldfolder):
             for name in files:
                 if name.endswith('gif'):
-                    newname = mydirlist[counter][-4:]
+                    newname = tiff_paths[counter][-30:-25]
+                    # newname = mydirlist[counter][-4:]
                     # os.rename(os.path.join(root, name), f'{path}{newname}')
                     shutil.copy(os.path.join(root, name), f'{path}{newname}.gif')
         counter += 1
