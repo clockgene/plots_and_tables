@@ -616,10 +616,10 @@ KW_BoxenPlot1(data, "Group", "P91", kind='violin')
 # OLS(data, "wgain ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M + Problem", 'wgain')
 
 
-GLS(data, "slopes91 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes91')  # SIGNIFICANT
-GLS(data, "slopes42 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes42')
-GLS(data, "P14 ~ Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'P14')
-
+OLS(data, "slopes91 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes91')  # SIGNIFICANT
+OLS(data, "slopes42 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes42')
+OLS(data, "P14 ~ Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'P14')
+OLS(data, "P91 ~ P14 + slopes91 + slopes42 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'P91')
 
 # def tSNE(data, columns, hue, mydir):
 # tSNE(data, ['Group', 'Litter_size_P14', 'Maternal_age_at_birth', 'percent_of_M', 'wgain', 'P14', 'Problem'], 'Group', 'Group_7', mydir, perplexity=7, three_d=False, z=False)
@@ -669,6 +669,3 @@ data['LD1_group'] = LDA_plot(data, ['Group', 'Litter_size_P14', 'Maternal_age_at
 
 # data.to_csv('data.csv', index=False)
 # data.Group.nunique()
-
-
-
