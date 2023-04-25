@@ -2,7 +2,7 @@
 """
 Created on Wed Nov  9 15:54:53 2022
 Multivariette regression models, dimension. reduct. for Katyas weight data
-v.20230425
+v.20230425 v.3slopes
 @author: martin.sladek
 """
 
@@ -578,7 +578,7 @@ plt.savefig('_slopes.png', format = 'png')
 plt.clf()
 plt.close() 
 
-data = k2bins(data, 'wgain', 'wgain_quant', first_bin_name='low', second_bin_name='high')
+# data = k2bins(data, 'wgain', 'wgain_quant', first_bin_name='low', second_bin_name='high')
 
 data = data.reset_index()
 
@@ -614,8 +614,82 @@ data = data.reset_index()
 #     plt.close() 
     
 # SEXES separate    
+# for i in data.Litter.unique():    
+#     dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P14':'P42']
+#     # Reshape the data into long format using melt
+#     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+#     # Split the Timepoint column into two separate columns for time and replicate   
+#     data_melted['Time'] = data_melted['Timepoint'].str[1:]
+#     data_melted['Time'] = data_melted['Time'].astype(int) 
+#     slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'slopes42m'] = slope
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+#     # plt.clf()
+#     # plt.close() 
+
+
+# for i in data.Litter.unique():    
+#     dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P14':'P42']
+#     # Reshape the data into long format using melt
+#     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+#     # Split the Timepoint column into two separate columns for time and replicate   
+#     data_melted['Time'] = data_melted['Timepoint'].str[1:]
+#     data_melted['Time'] = data_melted['Time'].astype(int) 
+#     try:
+#         slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+#     except ValueError:
+#         slope = np.nan
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'slopes42f'] = slope
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+#     # plt.clf()
+#     # plt.close() 
+
+    
+# for i in data.Litter.unique():    
+#     dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P42':'P91']
+#     # Reshape the data into long format using melt
+#     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+#     # Split the Timepoint column into two separate columns for time and replicate   
+#     data_melted['Time'] = data_melted['Timepoint'].str[1:]
+#     data_melted['Time'] = data_melted['Time'].astype(int) 
+#     try:
+#         slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+#     except ValueError:
+#         slope = np.nan
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'slopes91m'] = slope
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+#     # plt.clf()
+#     # plt.close() 
+
+
+# for i in data.Litter.unique():    
+#     dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P42':'P91']
+#     # Reshape the data into long format using melt
+#     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+#     # Split the Timepoint column into two separate columns for time and replicate   
+#     data_melted['Time'] = data_melted['Timepoint'].str[1:]
+#     data_melted['Time'] = data_melted['Time'].astype(int) 
+#     try:
+#         slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+#     except ValueError:
+#         slope = np.nan
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'slopes91f'] = slope
+#     # plt.scatter(data_melted['Time'], data_melted['Value'])
+#     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+#     # plt.clf()
+#     # plt.close() 
+
+    
+# SEXES sep and 3 ages    
 for i in data.Litter.unique():    
-    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P14':'P42']
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P14':'P28']
     # Reshape the data into long format using melt
     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
     # Split the Timepoint column into two separate columns for time and replicate   
@@ -623,7 +697,7 @@ for i in data.Litter.unique():
     data_melted['Time'] = data_melted['Time'].astype(int) 
     slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
     # plt.scatter(data_melted['Time'], data_melted['Value'])
-    data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'slopes42m'] = slope
+    data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'slopes28m'] = slope
     # plt.scatter(data_melted['Time'], data_melted['Value'])
     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
     # plt.clf()
@@ -631,7 +705,7 @@ for i in data.Litter.unique():
 
 
 for i in data.Litter.unique():    
-    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P14':'P42']
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P14':'P28']
     # Reshape the data into long format using melt
     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
     # Split the Timepoint column into two separate columns for time and replicate   
@@ -642,7 +716,7 @@ for i in data.Litter.unique():
     except ValueError:
         slope = np.nan
     # plt.scatter(data_melted['Time'], data_melted['Value'])
-    data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'slopes42f'] = slope
+    data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'slopes28f'] = slope
     # plt.scatter(data_melted['Time'], data_melted['Value'])
     # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
     # plt.clf()
@@ -650,7 +724,44 @@ for i in data.Litter.unique():
 
     
 for i in data.Litter.unique():    
-    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P42':'P91']
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P28':'P49']
+    # Reshape the data into long format using melt
+    data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+    # Split the Timepoint column into two separate columns for time and replicate   
+    data_melted['Time'] = data_melted['Timepoint'].str[1:]
+    data_melted['Time'] = data_melted['Time'].astype(int) 
+    try:
+        slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+    except ValueError:
+        slope = np.nan
+    # plt.scatter(data_melted['Time'], data_melted['Value'])
+    data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'slopes49m'] = slope
+    # plt.scatter(data_melted['Time'], data_melted['Value'])
+    # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+    # plt.clf()
+    # plt.close() 
+
+
+for i in data.Litter.unique():    
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P28':'P49']
+    # Reshape the data into long format using melt
+    data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
+    # Split the Timepoint column into two separate columns for time and replicate   
+    data_melted['Time'] = data_melted['Timepoint'].str[1:]
+    data_melted['Time'] = data_melted['Time'].astype(int) 
+    try:
+        slope, intercept, rvalue, pvalue, stderr = linregress(data_melted['Time'], data_melted['Value'])
+    except ValueError:
+        slope = np.nan
+    # plt.scatter(data_melted['Time'], data_melted['Value'])
+    data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'slopes49f'] = slope
+    # plt.scatter(data_melted['Time'], data_melted['Value'])
+    # plt.savefig(f'age14-42_vs_weight_Group_{i}.png', format = 'png')
+    # plt.clf()
+    # plt.close() 
+
+for i in data.Litter.unique():    
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'm'), 'P49':'P91']
     # Reshape the data into long format using melt
     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
     # Split the Timepoint column into two separate columns for time and replicate   
@@ -669,7 +780,7 @@ for i in data.Litter.unique():
 
 
 for i in data.Litter.unique():    
-    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P42':'P91']
+    dfn = data.loc[(data['Litter'] == i) & (data['Sex'] == 'f'), 'P49':'P91']
     # Reshape the data into long format using melt
     data_melted = dfn.melt(var_name="Timepoint", value_name="Value")
     # Split the Timepoint column into two separate columns for time and replicate   
@@ -686,10 +797,16 @@ for i in data.Litter.unique():
     # plt.clf()
     # plt.close() 
 
+
 data['slopes91'] = data['slopes91m']
 data['slopes91'] = data['slopes91'].fillna(data['slopes91f'].loc[data['slopes91f'] == data['slopes91f']])
-data['slopes42'] = data['slopes42m']
-data['slopes42'] = data['slopes42'].fillna(data['slopes42f'].loc[data['slopes42f'] == data['slopes42f']])
+# data['slopes42'] = data['slopes42m']
+# data['slopes42'] = data['slopes42'].fillna(data['slopes42f'].loc[data['slopes42f'] == data['slopes42f']])
+data['slopes49'] = data['slopes49m']
+data['slopes49'] = data['slopes49'].fillna(data['slopes49f'].loc[data['slopes49f'] == data['slopes49f']])
+data['slopes28'] = data['slopes28m']
+data['slopes28'] = data['slopes28'].fillna(data['slopes28f'].loc[data['slopes28f'] == data['slopes28f']])
+
 data.loc[data.Sex == 'm', 'Sex_num'] = 1
 data.loc[data.Sex == 'f', 'Sex_num'] = 2
 
@@ -701,7 +818,9 @@ data.loc[data.Sex == 'f', 'Sex_num'] = 2
 
 KW_BoxenPlot1(data, "Group", "wgain", kind='violin') 
 KW_BoxenPlot1(data, "Group", "slopes91", kind='violin') 
-KW_BoxenPlot1(data, "Group", "slopes42", kind='violin') 
+# KW_BoxenPlot1(data, "Group", "slopes42", kind='violin') 
+KW_BoxenPlot1(data, "Group", "slopes49", kind='violin') 
+KW_BoxenPlot1(data, "Group", "slopes28", kind='violin') 
 KW_BoxenPlot1(data, "Group", "P14", kind='violin') 
 KW_BoxenPlot1(data, "Group", "P91", kind='violin') 
 # def KW_BoxenPlot1(data, col_var, y, ylim=(None, None), kind='boxstrip'):
@@ -724,27 +843,52 @@ KW_BoxenPlot1(data, "Group", "P91", kind='violin')
 
 # ADD INTERACTIONS (sex:P14 - add just this interaction, sex*P14 - adds interaction + sex + P14 = shorthand)
 
+# # categorical group
+# OLS(data, "slopes91 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes91_no_interactions')
+# OLS(data, "slopes42 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42_no_interactions')
+
+# # no additional slopes
+# OLS(data, "slopes91 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes91')
+# OLS(data, "slopes42 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42')
+
+# # all available interactions with slopes
+# OLS(data, "slopes91 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group) + Sex * P14 * slopes42", 'slopes91_complex')
+# OLS(data, "slopes42 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42_complex')
+
+# # weights
+# OLS(data, "P91 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P91')
+# OLS(data, "P91 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P91_complex')
+# OLS(data, "P14 ~ Sex + C(Group)", 'weight_P14')
+# OLS(data, "P14 ~ Sex + C(Group) + Litter_size_P14 + Maternal_age_at_birth", 'weight_P14_complex')
+# OLS(data, "P42 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P42')
+# OLS(data, "P42 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P42_complex')
+
+
+# 3 SLOPES
 # categorical group
 OLS(data, "slopes91 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes91_no_interactions')
-OLS(data, "slopes42 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42_no_interactions')
+OLS(data, "slopes49 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes49_no_interactions')
+OLS(data, "slopes28 ~ Sex + P14 + Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes28_no_interactions')
 
 # no additional slopes
 OLS(data, "slopes91 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes91')
-OLS(data, "slopes42 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42')
+OLS(data, "slopes49 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes49')
+OLS(data, "slopes28 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes28')
 
 # all available interactions with slopes
-OLS(data, "slopes91 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group) + Sex * P14 * slopes42", 'slopes91_complex')
-OLS(data, "slopes42 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes42_complex')
-
+OLS(data, "slopes91 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group) + Sex * P14 * slopes49", 'slopes91_complex')
+OLS(data, "slopes49 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group) + Sex * P14 * slopes28", 'slopes49_complex')
+OLS(data, "slopes28 ~ Sex + P14 * Litter_size_P14 + Maternal_age_at_birth + C(Group)", 'slopes28_complex')
 
 # weights
 OLS(data, "P91 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P91')
 OLS(data, "P91 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P91_complex')
 OLS(data, "P14 ~ Sex + C(Group)", 'weight_P14')
 OLS(data, "P14 ~ Sex + C(Group) + Litter_size_P14 + Maternal_age_at_birth", 'weight_P14_complex')
-OLS(data, "P42 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P42')
-OLS(data, "P42 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P42_complex')
-
+OLS(data, "P49 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P49')
+OLS(data, "P49 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P49_complex')
+OLS(data, "P28 ~ P14 + Sex + C(Group) + Litter_size_P14", 'weight_P28')
+OLS(data, "P28 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth", 'weight_P28_complex')
 
 # OLS(data, "slopes91 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes91')  # SIGNIFICANT if slopes calculated for both sexes together
 # OLS(data, "slopes42 ~ P14 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'slopes42')
@@ -752,18 +896,17 @@ OLS(data, "P42 ~ Sex + C(Group) + Litter_size_P14 * P14 + Maternal_age_at_birth"
 # OLS(data, "P91 ~ P14 + slopes91 + slopes42 + Maternal_age_at_birth + Litter_size_P14 + Group + percent_of_M", 'P91')
 
 # def tSNE(data, columns, hue, mydir):
-tSNE(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Group', 'Group', mydir, perplexity=18, three_d=False, z=True)
+tSNE(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes49', 'slopes28'], 'Group', 'Group', mydir, perplexity=19, three_d=False, z=True)
+
+# tSNE(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'percent_of_M', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Group', 'Group', mydir, perplexity=20, three_d=False, z=True)
 
 
-tSNE(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'percent_of_M', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Group', 'Group', mydir, perplexity=20, three_d=False, z=True)
+data['PC1'], data['PC2'] = PCA_plot(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes49', 'slopes28'], 'Group', 'Group', mydir, pc='PC1')
+data['PC1'], data['PC2'] = PCA_plot(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes49', 'slopes28'], 'Sex', 'Group', mydir, pc='PC1')
 
+data['LD1_group'] = LDA_plot(data, ['Group', 'Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes49', 'slopes28'], 'Group', 'Group', mydir, scatter=False, plot_PCAxLDA=False, pc='PC1')
 
-data['PC1'], data['PC2'] = PCA_plot(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Group', 'Group', mydir, pc='PC1')
-data['PC1'], data['PC2'] = PCA_plot(data, ['Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Sex', 'Group', mydir, pc='PC1')
-
-data['LD1_group'] = LDA_plot(data, ['Group', 'Litter_size_P14', 'Maternal_age_at_birth', 'Sex_num', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Group', 'Group', mydir, scatter=False, plot_PCAxLDA=False, pc='PC1')
-
-data['LD1_sex'] = LDA_plot(data, ['Sex_num', 'Litter_size_P14', 'Maternal_age_at_birth', 'Group', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes42'], 'Sex_num', 'Sex', mydir, scatter=False, plot_PCAxLDA=False, pc='PC1')
+data['LD1_sex'] = LDA_plot(data, ['Sex_num', 'Litter_size_P14', 'Maternal_age_at_birth', 'Group', 'P14','P21', 'P28', 'P35', 'P42', 'P49', 'P56', 'P63', 'P70', 'P77', 'P84', 'P91', 'Problem', 'slopes91', 'slopes49', 'slopes28'], 'Sex_num', 'Sex', mydir, scatter=False, plot_PCAxLDA=False, pc='PC1')
 
 
 # filtered data wo Problem pups
