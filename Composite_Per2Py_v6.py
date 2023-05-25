@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20230321 - flexible number of explants
+v20230525 - flexible number of explants
 """
 # imports
 import numpy  as np
@@ -19,14 +19,14 @@ import seaborn as sns
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
-experiment = 'before_after_rhythm'
+experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'Trace'
+graphtype = 'Phase_Histogram'
 
 # Need arrow for treatment? Then add treatment time in h.
-treatment_time = 69
+treatment_time = 0
 
 # True - Plot all individual roi luminescence traces (TAKES a LONG TIME). False - Plot just median trace.
 Plot_All_Traces = True
@@ -37,17 +37,17 @@ cutoff2 = None
 
 # set number of explants or how many individual L and R SCNs were analyzed.
 # There will be Nr rows and 2 columns - before, after (subfolders of each explant) for experiment = 'before_after_rhythm'
-Nr = 5
+Nr = 4
 
 #For experiment = 'rhythm' or 'decay', need also Nc and Nw variables to control cols and rows
 # no. of columns
 Nc = 2
 # no. of rows
-Nw = 3
+Nw = 2
 
 # Adjust spacing between before left-right and up-down heatmap plots, for 6 SCN try -0.9, for less or for big CP -0.6
 wspace=-0.1
-hspace=0.3
+hspace= 0.1
 
 # Same size heatmaps for all explants (True) or or adjust size to fit whole heatmap (False)?
 # For explants with widely different size, sometimes True results in only partially plotted heatmap.
@@ -55,18 +55,21 @@ sharex = True
 sharey = True
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -10
-fontsize = 4
-
-# Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 or more (bigger iqr keeps bigger outliers) esp. for Amplitude
-iqr_value = 8.88
-
-# if iqr filter fails (bad rhuthm) use Log normalize to make usable Amp heatmaps
-lognorm = False
+pad = -14
+fontsize = 10
 
 # For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
 name = -10               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
 nameend = None          # None, or try -4
+
+# Amplitude specific settings 
+# Adjust outlier filtering, try iqr_value 1, 2.22 or 8.88 or more (bigger iqr keeps bigger outliers) 
+iqr_value = 8.88
+# deafult False , but if iqr filter fails (bad rhythm) may use Log normalize to make usable Amp heatmaps
+lognorm = False
+# deafult False , but if if iqr fails, may set index (0 - x) of image for which normalization will be disabled
+nonorm = False
+
 
 
 # DO NOT EDIT BELOW
@@ -659,6 +662,10 @@ if experiment == 'before_after_rhythm':
                 #cbar.ax.set_xlabel('Phase in °')
             
             else:
+                # Update 25.5.2023    
+                if nonorm != False:
+                    del images[nonorm]
+                    
                 # Find the min and max of all colors for use in setting the color scale.
                 vmin = min(image.get_array().min() for image in images)
                 vmax = max(image.get_array().max() for image in images)
@@ -892,14 +899,17 @@ if experiment == 'rhythm':
             cbar.ax.set_ylabel('Phase (h)', rotation=270, labelpad=12) # fontsize=5, 
             cbar.ax.set_yticklabels((3, 6, 9, 12, 15, 18, 21)) #, fontsize=11       
             
-        else:
+        else:                        
+            # Update 25.5.2023    
+            if nonorm != False:
+                del images[nonorm]
             
             # Find the min and max of all colors for use in setting the color scale.
             vmin = min(image.get_array().min() for image in images)
             vmax = max(image.get_array().max() for image in images)
             norm = colors.Normalize(vmin=vmin, vmax=vmax)
             if lognorm == True:
-                norm = colors.LogNorm(vmin=vmin, vmax=vmax)            
+                norm = colors.LogNorm(vmin=vmin, vmax=vmax)                     
             for im in images:
                 im.set_norm(norm)
             
