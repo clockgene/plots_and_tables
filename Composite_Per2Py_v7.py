@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20230809 - filtering by Rsq
+v20230810 - filtering by parameter, TraceHeatmaps, and more
 """
 # imports
 import numpy  as np
@@ -21,23 +21,23 @@ import seaborn as sns
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
 experiment = 'rhythm'
 
-# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS
+# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS, TraceHeatmaps
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'Amplitude'
+graphtype = 'Trace'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
 
 # True - Plot all individual roi luminescence traces (TAKES a LONG TIME). False - Plot just median trace. 'select_parameter' - Plot rois filtred by parameter.
 # Plot_All_Traces = True
-# Plot_All_Traces = 'select_rsq'
-Plot_All_Traces = 'select_amp'
+Plot_All_Traces = 'select_rsq'
+# Plot_All_Traces = 'select_amp'
 # Plot_All_Traces = 'select_trend'
 # Plot_All_Traces = 'select_decay'
 
 # set arbitrary thresholds for filtering by R, Amp or other parameters
-rsq_threshold = 0.95
-amp_threshold = 10    # different number for heatmap and for trace, but why? heatmap is norm after
+rsq_threshold = 0.98
+amp_threshold = 15    # different number for heatmap and for trace, but why? heatmap is norm after
 trend_threshold = 40
 decay_threshold = 0.000001
 
@@ -740,10 +740,164 @@ if experiment == 'before_after_rhythm':
  
 
 if experiment == 'rhythm':
+    
+    if graphtype == 'TraceHeatmaps':
+        
+        fig, axs = plt.subplots(nrows=Nw, ncols=Nc, sharex=True, sharey=False, figsize=(6,12))  # , sharey=False does not WORK as in RNAseq, due to looping?
+        
+        counter = 0
+        images = []
+        for i in range(Nw):
+            for j in range(Nc):                
+                
+                # Update 21.3.2023
+                if Nw*Nc -1 == Nr:
+                    if counter == Nw*Nc -1:
+                        break
+                    
+                mydir = f'{mydirlist[counter]}\\'
+                print(mydir)
+                data = pd.read_csv(glob.glob(f'{mydir}*cosine.csv')[0])
+                datar = pd.read_csv(glob.glob(f'{mydir}*signal.csv')[0])
+                title = mydirlist[counter][-9:]
+                df = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])    
+                
+                if Plot_All_Traces is True:              
+
+                    if Nw == 1 or Nc == 1:
+                        datar.pop(' ')
+                        df_heat_spec1 = datar.T.sort_values(by=[0])                        
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[counter], cmap='YlGnBu_r', zorder=-10)
+                                        
+                    else:
+                        datar.pop(' ')
+                        df_heat_spec1 = datar.T.sort_values(by=[0])           
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[i, j], cmap='YlGnBu_r', zorder=-10)  #cbar_ax=axs[1], tell sns which ax to use  #cmap='coolwarm'
+
+                if Plot_All_Traces == 'select_rsq':
+                    df_heat_list = []
+                    phase_heat_list = []
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        phase_value = df['CircPeak'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)]  #  CircPeak looks better than Phase                      
+                        rsq_value = df['Rsq'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                        if rsq_value > rsq_threshold:
+                            df_heat_list.append(datar[m].values)
+                            phase_heat_list.append(phase_value)
+                        
+                    if Nw == 1 or Nc == 1:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])                       
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[counter], cmap='YlGnBu_r', zorder=-10) 
+                                        
+                    else:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])  
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[i, j], cmap='YlGnBu_r', zorder=-10)          # viridis       
+                        # for testing and colorbar printing
+                        # fig, axs = plt.subplots(ncols=2, nrows=1, sharex=False, sharey=False,  gridspec_kw={'width_ratios': [20, 1]}) 
+                        # sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=True, ax=axs[0], cbar_ax=axs[1], cmap='YlGnBu')
+                        # plt.savefig(f'{path}TraceHeatmaps______test.png')
+
+                if Plot_All_Traces == 'select_amp':
+                    df_heat_list = []
+                    phase_heat_list = []
+                    for m in datar[cutoff:cutoff2].columns[1:]:  
+                        phase_value = df['CircPeak'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)]  #  CircPeak looks better than Phase    
+                        amp_value = df['Amplitude'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.                                         
+                        if amp_value > amp_threshold:
+                            df_heat_list.append(datar[m].values)
+                            phase_heat_list.append(phase_value)
+                        
+                    if Nw == 1 or Nc == 1:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])                    
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[counter], cmap='YlGnBu_r', zorder=-10) 
+                                        
+                    else:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))                        
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[i, j], cmap='YlGnBu_r', zorder=-10) 
+
+                if Plot_All_Traces == 'select_trend':
+                    df_heat_list = []
+                    phase_heat_list = []
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        phase_value = df['CircPeak'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)]  #  CircPeak looks better than Phase                      
+                        trend_value = df['Trend'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                        if trend_value > trend_threshold:
+                            df_heat_list.append(datar[m].values)
+                            phase_heat_list.append(phase_value)
+                        
+                    if Nw == 1 or Nc == 1:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])                      
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[counter], cmap='YlGnBu_r', zorder=-10) 
+                                        
+                    else:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase']) 
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[i, j], cmap='YlGnBu_r', zorder=-10) 
+
+                if Plot_All_Traces == 'select_decay':
+                    df_heat_list = []
+                    phase_heat_list = []
+                    for m in datar[cutoff:cutoff2].columns[1:]:
+                        phase_value = df['CircPeak'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)]  #  CircPeak looks better than Phase                      
+                        decay_value = df['Decay'].iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                        if decay_value > decay_threshold:
+                            df_heat_list.append(datar[m].values)
+                            phase_heat_list.append(phase_value)
+                        
+                    if Nw == 1 or Nc == 1:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])                      
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[counter], cmap='YlGnBu_r', zorder=-10) 
+                                        
+                    else:
+                        df_heat = pd.DataFrame(df_heat_list, columns = np.arange(0, len(datar.index)))
+                        df_heat['Phase'] = phase_heat_list                        
+                        df_heat_spec1 = df_heat.sort_values(by=['Phase'])  
+                        df_heat_spec1 = df_heat_spec1.drop(columns=['Phase'])
+                        sns.heatmap(df_heat_spec1.astype(float), xticklabels=24, yticklabels=False, annot=False, cbar=False, ax=axs[i, j], cmap='YlGnBu_r', zorder=-10)                         
+
+                if Nw == 1 or Nc == 1:
+                    
+                    axs[counter].set_xlabel(f'{title}', fontsize=round(int(100/Nr)), labelpad=5) 
+                    axs[counter].set_rasterization_zorder(0)
+
+                else:
+                    
+                    axs[i, j].set_xlabel(f'{title}', fontsize=round(int(100/Nr)), labelpad=5) 
+                    axs[i, j].set_rasterization_zorder(0)
+                
+                counter += 1
+
+        ### To save as bitmap png for easy viewing ###
+        plt.savefig(f'{path}TraceHeatmaps.png')
+        ### To save as vector svg with fonts editable in Corel ###
+        plt.savefig(f'{path}TraceHeatmaps.svg', format = 'svg') # need zorder=-10 in plt and axs[i, j].set_rasterization_zorder(0), svg ignores dpi
+        plt.savefig(f'{path}TraceHeatmaps.pdf', dpi=600)
+        plt.clf()
+        plt.close()
+    
 
     if graphtype == 'Trace':   # create plots of Raw traces and cosines
         
-        fig, axs = plt.subplots(Nw, Nc, figsize=(20,40))        # gridspec_kw={'width_ratios':[2,1]} This sets different siye for left and right subplots.
+        fig, axs = plt.subplots(Nw, Nc, figsize=(6,12))        # figsize=(20,40)
         
         counter = 0
         images = []
@@ -773,61 +927,83 @@ if experiment == 'rhythm':
                 df = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
                 
                 if Plot_All_Traces == 'select_rsq':
-                    for m in datar[cutoff:cutoff2].columns[1:]:
-                        rsq_value = df['Rsq'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
-                        if rsq_value > rsq_threshold:
-                            if Nw == 1 or Nc == 1:
+
+                    if Nw == 1 or Nc == 1:
+                        axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                        
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            rsq_value = df['Rsq'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if rsq_value > rsq_threshold:                      
                                 axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
-                                axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                            else:
+              
+                    else:
+                        axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            rsq_value = df['Rsq'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if rsq_value > rsq_threshold:                      
                                 axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
-                                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                             
+                                                             
                 if Plot_All_Traces == 'select_amp':
-                    for m in datar[cutoff:cutoff2].columns[1:]:
-                        amp_value = df['Amplitude'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
-                        if amp_value > amp_threshold:
-                            if Nw == 1 or Nc == 1:
+
+                    if Nw == 1 or Nc == 1:
+                        axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                        
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            amp_value = df['Amplitude'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if amp_value > amp_threshold:                      
                                 axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
-                                axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                            else:
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
-                                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                                
+              
+                    else:
+                        axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            amp_value = df['Amplitude'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if amp_value > amp_threshold:                      
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])                            
 
                 if Plot_All_Traces == 'select_trend':
-                    for m in datar[cutoff:cutoff2].columns[1:]:
-                        trend_value = df['Trend'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
-                        if trend_value > trend_threshold:
-                            if Nw == 1 or Nc == 1:
+
+                    if Nw == 1 or Nc == 1:
+                        axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                        
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            trend_value = df['Trend'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if trend_value > trend_threshold:                      
                                 axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
-                                axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                            else:
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
-                                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                        
+              
+                    else:
+                        axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            trend_value = df['Trend'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if trend_value > trend_threshold:                      
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])                     
 
                 if Plot_All_Traces == 'select_decay':
-                    for m in datar[cutoff:cutoff2].columns[1:]:
-                        decay_value = df['Decay'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
-                        if decay_value < decay_threshold:
-                            if Nw == 1 or Nc == 1:
-                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
-                                axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                            else:
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
-                                axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')        
 
-                if Plot_All_Traces is True:                
-                    for m in datar[cutoff:cutoff2].columns[1:]:
-                        # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
-                        if Nw == 1 or Nc == 1:
+                    if Nw == 1 or Nc == 1:
+                        axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                        
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            decay_value = df['Decay'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if decay_value > decay_threshold:                      
+                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+              
+                    else:
+                        axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
+                        for m in datar[cutoff:cutoff2].columns[1:]:                            
+                            decay_value = df['Decay'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
+                            if decay_value > decay_threshold:                      
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])      
+
+                if Plot_All_Traces is True:
+                    
+                    if Nw == 1 or Nc == 1:
+                        axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                        for m in datar[cutoff:cutoff2].columns[1:]:
                             axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
-                            axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                        else:
+
+                    else:
+                        axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
+                        for m in datar[cutoff:cutoff2].columns[1:]:
                             axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
-                            axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
-                        
+                                                   
                 else:
-                    # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1)) 
+
                     if Nw == 1 or Nc == 1:
                         axs[counter].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1)) 
                         axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
@@ -840,7 +1016,7 @@ if experiment == 'rhythm':
                     axs[counter].label_outer()
                     axs[counter].set_yticklabels([])
                     axs[counter].set_xticklabels([]) 
-                    axs[counter].set_xlabel(f'{title}', fontsize=round(int(288/Nr)), labelpad=-5) 
+                    axs[counter].set_xlabel(f'{title}', fontsize=round(int(100/Nr)), labelpad=-5) 
                     axs[counter].set_xticks([])
                     axs[counter].set_yticks([])
                     axs[counter].spines['top'].set_visible(False) # to turn off individual borders 
@@ -852,13 +1028,14 @@ if experiment == 'rhythm':
                     axs[i, j].label_outer()
                     axs[i, j].set_yticklabels([])
                     axs[i, j].set_xticklabels([]) 
-                    axs[i, j].set_xlabel(f'{title}', fontsize=round(int(288/Nr)), labelpad=-5) 
+                    axs[i, j].set_xlabel(f'{title}', fontsize=round(int(100/Nr)), labelpad=-5)  #288/Nr
                     axs[i, j].set_xticks([])
                     axs[i, j].set_yticks([])
                     axs[i, j].spines['top'].set_visible(False) # to turn off individual borders 
                     axs[i, j].spines['right'].set_visible(False)
                     axs[i, j].spines['bottom'].set_visible(False)
                     axs[i, j].spines['left'].set_visible(False)
+                    # axs[i, j].set_rasterization_zorder(0)
 
                 
                 counter += 1
@@ -866,7 +1043,7 @@ if experiment == 'rhythm':
         ### To save as bitmap png for easy viewing ###
         plt.savefig(f'{path}Composite_Trace.png')
         ### To save as vector svg with fonts editable in Corel ###
-        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg') #if using rasterized = True to reduce size, set-> dpi=300
+        plt.savefig(f'{path}Composite_Trace.svg', format = 'svg')
         plt.clf()
         plt.close()
 
