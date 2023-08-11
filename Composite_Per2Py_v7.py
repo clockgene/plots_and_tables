@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20230810 - filtering by parameter, TraceHeatmaps, and more
+v20230811 - filtering by parameter, TraceHeatmaps, and more
 """
 # imports
 import numpy  as np
@@ -16,6 +16,7 @@ from tkinter import filedialog
 from tkinter import *
 from matplotlib import colors
 import seaborn as sns
+import scipy.stats as stats
 
 
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
@@ -23,26 +24,26 @@ experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS, TraceHeatmaps
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'Trace'
+graphtype = 'Parameters'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
 
 # True - Plot all individual roi luminescence traces (TAKES a LONG TIME). False - Plot just median trace. 'select_parameter' - Plot rois filtred by parameter.
-# Plot_All_Traces = True
-Plot_All_Traces = 'select_rsq'
+Plot_All_Traces = True
+# Plot_All_Traces = 'select_rsq'
 # Plot_All_Traces = 'select_amp'
 # Plot_All_Traces = 'select_trend'
 # Plot_All_Traces = 'select_decay'
 
 # set arbitrary thresholds for filtering by R, Amp or other parameters
-rsq_threshold = 0.98
-amp_threshold = 15    # different number for heatmap and for trace, but why? heatmap is norm after
+rsq_threshold = 0.97
+amp_threshold = 3    # different number for heatmap and for trace, but why? heatmap is norm after
 trend_threshold = 40
 decay_threshold = 0.000001
 
 # cut first x hours before and leave y hours total (cutoff = 12, cutoff2 = None --- default)
-cutoff = None
+cutoff = 6
 cutoff2 = None
 
 # set number of explants or how many individual L and R SCNs were analyzed.
@@ -69,7 +70,7 @@ pad = -17
 fontsize = 10
 
 # For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
-name = -10               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
+name = -5               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
 nameend = None          # None, or try -4
 
 # use iqr_value unles this is set to True - for Parameters violin plots with activated threshold, set to True
@@ -83,6 +84,8 @@ lognorm = False
 # deafult False , but if if iqr fails, may set index (0 - x) of image for which normalization will be disabled
 nonorm = False
 
+# Make violinn plot for statistics combining different explants
+combineGroup = True
 
 # DO NOT EDIT BELOW
 
@@ -157,6 +160,54 @@ def update(changed_image):
                 or changed_image.get_clim() != im.get_clim()):
             im.set_cmap(changed_image.get_cmap())
             im.set_clim(changed_image.get_clim())
+
+# Violin plot from wide-format dataframe 
+def violin_stat(data, title, ticks, remove_outliers=True, iqr_value = 2.22, test = 'ttest'):
+    
+    # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
+    if remove_outliers == True:
+        for col in data.columns.values:
+            iqr = data[col].quantile(0.75) - data[col].quantile(0.25)
+            lim = np.abs((data[col] - data[col].median()) / iqr) < iqr_value
+            data.loc[:, col] = data[col].where(lim, np.nan)
+    
+    title = title  
+    
+    # creating a dictionary with one specific color per group:
+    my_pal = {data.columns[0]: "slateblue", data.columns[1]: "tomato"}
+    
+    fig, ax = plt.subplots(1, figsize=(2,4))          
+    ax = sns.violinplot(data=data, palette=my_pal)
+    # plt.title(title)
+    ax.axes.xaxis.set_ticklabels(ticks)
+    ax.set_xlabel('') 
+    ax.set_ylabel(f'{title}') 
+    ax.spines['top'].set_visible(False) # to turn off individual borders 
+    ax.spines['right'].set_visible(False)
+    # plt.xticks(rotation=90)
+    
+    ###### Calculate t test p values between hue_dat for separate categories in col_dat ######
+    pvalues = []
+    datax1 = data[data.columns[0]].dropna(how='any')
+    datax2 = data[data.columns[1]].dropna(how='any')
+    
+    if test == 'ttest':
+        t, p = stats.ttest_ind(datax1.values, datax2.values)
+        pvalues = pvalues + [p]
+        plt.annotate('t test \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
+                     xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+    else:
+        t, p = stats.mannwhitneyu(datax1.values, datax2.values)    
+        pvalues = pvalues + [p]
+        plt.annotate('Mann-Whitney \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
+                     xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+    
+    
+    plt.savefig(f'{path}Violin_{title}.png', format = 'png', bbox_inches = 'tight')   
+    plt.savefig(f'{path}Violin_{title}.svg', format = 'svg', bbox_inches = 'tight')
+    plt.clf()
+    plt.close()
+
 
 # custom colors for nice circular hues
 circular_colors = np.array([[0.91510904, 0.55114749, 0.67037311],
@@ -1445,6 +1496,112 @@ if graphtype == 'Parameters':
     violin(df2.iloc[:, 3*i:4*i], 'Trend')
     violin(df2.iloc[:, 4*i:5*i], 'Decay')
     violin(df2.iloc[:, 5*i:6*i], 'Rsq')
+
+    """Ask AI
+    I have one pandas dataframe called ddf2 = pd.DataFrame({'Period\CHP1': [1, 5, 3, 0, 3,...],  'Period\CHP2': [1, 2, 3, 2, 1,...],  
+                                                            'Period\CHP3': [5, 7, 9, 5, 0,...], 'Period\CHP4': [1, 3, 5, 3, 1,...], 
+                                                            'Period\CHP5': [2, 3, 5, 4, 1,...], 'Period\CHP6': [0, 0, 0, 0, 1,...]}) . 
+    I need to make another dataframe df with just two columns {'Period_CHP123': [1, 5, 3, 0, 3, ..., 1, 2, 3, 2, 1, ..., 5, 7, 9, 5, 0,...], 
+                                                               'Period_CHP456': [1, 3, 5, 3, 1,..., 2, 3, 5, 4, 1,..., 0, 0, 0, 0, 1,...]}.    
+    """
+
+    if combineGroup == True:
+        
+        df3 = df2[['Period\CHP1', 'Period\CHP2', 'Period\CHP3', 'Period\CHP4', 'Period\CHP5', 'Period\CHP6']]
+        # Rename columns
+        df3.columns = ['Period_CHP1', 'Period_CHP2', 'Period_CHP3', 'Period_CHP4', 'Period_CHP5', 'Period_CHP6']        
+        melted = df3.melt(value_vars=['Period_CHP1', 'Period_CHP2', 'Period_CHP3', 'Period_CHP4', 'Period_CHP5', 'Period_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and period numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Period'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Period' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Period of all cells', ticks=df.columns, remove_outliers=True, iqr_value=2.22, test='mann')
+        
+        df3 = df2[['Amplitude\CHP1', 'Amplitude\CHP2', 'Amplitude\CHP3', 'Amplitude\CHP4', 'Amplitude\CHP5', 'Amplitude\CHP6']]
+        # Rename columns
+        df3.columns = ['Amplitude_CHP1', 'Amplitude_CHP2', 'Amplitude_CHP3', 'Amplitude_CHP4', 'Amplitude_CHP5', 'Amplitude_CHP6']        
+        melted = df3.melt(value_vars=['Amplitude_CHP1', 'Amplitude_CHP2', 'Amplitude_CHP3', 'Amplitude_CHP4', 'Amplitude_CHP5', 'Amplitude_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Amplitude numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Amplitude'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Amplitude' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Amplitude of all cells', ticks=df.columns, remove_outliers=True, iqr_value=2.22, test='mann')
+        
+        df3 = df2[['Phase\CHP1', 'Phase\CHP2', 'Phase\CHP3', 'Phase\CHP4', 'Phase\CHP5', 'Phase\CHP6']]
+        # Rename columns
+        df3.columns = ['Phase_CHP1', 'Phase_CHP2', 'Phase_CHP3', 'Phase_CHP4', 'Phase_CHP5', 'Phase_CHP6']        
+        melted = df3.melt(value_vars=['Phase_CHP1', 'Phase_CHP2', 'Phase_CHP3', 'Phase_CHP4', 'Phase_CHP5', 'Phase_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Phase numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Phase'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Phase' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Phase of all cells', ticks=df.columns, remove_outliers=True, iqr_value=2.22, test='mann')
+        
+        df3 = df2[['Trend\CHP1', 'Trend\CHP2', 'Trend\CHP3', 'Trend\CHP4', 'Trend\CHP5', 'Trend\CHP6']]
+        # Rename columns
+        df3.columns = ['Trend_CHP1', 'Trend_CHP2', 'Trend_CHP3', 'Trend_CHP4', 'Trend_CHP5', 'Trend_CHP6']        
+        melted = df3.melt(value_vars=['Trend_CHP1', 'Trend_CHP2', 'Trend_CHP3', 'Trend_CHP4', 'Trend_CHP5', 'Trend_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Trend numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Trend'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Trend' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Trend of all cells', ticks=df.columns, remove_outliers=True, iqr_value=2.22, test='mann')
+
+        df3 = df2[['Decay\CHP1', 'Decay\CHP2', 'Decay\CHP3', 'Decay\CHP4', 'Decay\CHP5', 'Decay\CHP6']]
+        # Rename columns
+        df3.columns = ['Decay_CHP1', 'Decay_CHP2', 'Decay_CHP3', 'Decay_CHP4', 'Decay_CHP5', 'Decay_CHP6']        
+        melted = df3.melt(value_vars=['Decay_CHP1', 'Decay_CHP2', 'Decay_CHP3', 'Decay_CHP4', 'Decay_CHP5', 'Decay_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Decay numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Decay'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Decay' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Decay of all cells', ticks=df.columns, remove_outliers=True, iqr_value=2.22, test='mann')
+
+        df3 = df2[['Rsq\CHP1', 'Rsq\CHP2', 'Rsq\CHP3', 'Rsq\CHP4', 'Rsq\CHP5', 'Rsq\CHP6']]
+        # Rename columns
+        df3.columns = ['Rsq_CHP1', 'Rsq_CHP2', 'Rsq_CHP3', 'Rsq_CHP4', 'Rsq_CHP5', 'Rsq_CHP6']        
+        melted = df3.melt(value_vars=['Rsq_CHP1', 'Rsq_CHP2', 'Rsq_CHP3', 'Rsq_CHP4', 'Rsq_CHP5', 'Rsq_CHP6'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CHP1') | (melted['Prefix'] == 'CHP2') | (melted['Prefix'] == 'CHP3')), 'Prefix'] = 'Control'
+        melted.loc[((melted['Prefix'] == 'CHP4') | (melted['Prefix'] == 'CHP5') | (melted['Prefix'] == 'CHP6')), 'Prefix'] = 'SCNx'
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Rsq of all cells', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')        
     
 # copy or move and rename animated gif files from all TIFF folders to anal folder
 if graphtype == 'GIFS': 
