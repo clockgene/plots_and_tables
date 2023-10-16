@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20230811 - filtering by parameter, TraceHeatmaps, and more
+v20231016 - filtering by parameter, TraceHeatmaps, and more
 """
 # imports
 import numpy  as np
@@ -24,7 +24,7 @@ experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS, TraceHeatmaps, TIFSEQUENCE
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'TIFSEQUENCE'
+graphtype = 'GIFS'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
@@ -66,8 +66,8 @@ sharex = True
 sharey = True
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
-pad = -17
-fontsize = 10
+pad = -13
+fontsize = 8
 
 # For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
 name = -5               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
@@ -84,8 +84,8 @@ lognorm = False
 # deafult False , but if if iqr fails, may set index (0 - x) of image for which normalization will be disabled
 nonorm = False
 
-# Make violinn plot for statistics combining different explants
-combineGroup = True
+# Make violinn plot for statistics combining different explants, True - experiment specific, need to adjust and finetune the script
+combineGroup = False
 
 # For TIFSEQUENCE - how many pictures u want? Set Nx, total pictures will be Nx^2
 Nx = 7
@@ -1510,7 +1510,7 @@ if graphtype == 'Parameters':
     I need to make another dataframe df with just two columns {'Period_CHP123': [1, 5, 3, 0, 3, ..., 1, 2, 3, 2, 1, ..., 5, 7, 9, 5, 0,...], 
                                                                'Period_CHP456': [1, 3, 5, 3, 1,..., 2, 3, 5, 4, 1,..., 0, 0, 0, 0, 1,...]}.    
     """
-
+    # !!! THIS IS EXPERIMENT SPECIFIC, here it separates 6 explants from 1 ChP experiment to 2 groups and combines them for statistics
     if combineGroup == True:
         
         df3 = df2[['Period\CHP1', 'Period\CHP2', 'Period\CHP3', 'Period\CHP4', 'Period\CHP5', 'Period\CHP6']]
@@ -1638,14 +1638,14 @@ if graphtype == 'GIFS':
         for root, dirs, files in os.walk(oldfolder):
             for name in files:
                 if name.endswith('gif'):
-                    newname = tiff_paths[counter][-30:-25]
-                    # newname = mydirlist[counter][-4:]
+                    # newname = tiff_paths[counter][-30:-25]
+                    newname = mydirlist[counter][-4:]   # if error, try the line above instead
                     # os.rename(os.path.join(root, name), f'{path}{newname}')
                     shutil.copy(os.path.join(root, name), f'{path}{newname}.gif')
         counter += 1
         
         
-# copy or move and rename animated gif files from all TIFF folders to anal folder
+# create tablo from sequence of tiffs, choose how many from start (Nx), need to be square grid, e.g. 5x5 or 7x7
 if graphtype == 'TIFSEQUENCE':         
         
     import shutil
@@ -1677,16 +1677,8 @@ if graphtype == 'TIFSEQUENCE':
     images = []
 
     for i in range(Nx):
-        for j in range(Nx):            
-            
-            # # Update 21.3.2023
-            # if Nw*Nc -1 == Nr:
-            #     if counter == Nw*Nc -1:
-            #         break
-    
-            # data_hl = pd.read_csv(glob.glob(f'{tiff_path}*decay_params.csv')[0])   
-            
-            
+        for j in range(Nx):         
+
             ######### Ceate LIST of image files in cwd and put their path to list
             files = []
             with os.scandir(tiff_path) as it:
@@ -1745,5 +1737,3 @@ if graphtype == 'TIFSEQUENCE':
                 
                 
                 
-                
-        
