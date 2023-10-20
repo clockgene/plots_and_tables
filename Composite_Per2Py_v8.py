@@ -22,24 +22,24 @@ import scipy.stats as stats
 # Choose type of experiment: decay, rhythm (without treatment), before_after_rhythm (i.e. with treatment)
 experiment = 'rhythm'
 
-# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace or Parameters + GIFS, TraceHeatmaps, TIFSEQUENCE
+# Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace , Parameters, GIFS, TraceHeatmaps, TIFSEQUENCE
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'GIFS'
+graphtype = 'Parameters'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
 
 # True - Plot all individual roi luminescence traces (TAKES a LONG TIME). False - Plot just median trace. 'select_parameter' - Plot rois filtred by parameter.
-Plot_All_Traces = True
-# Plot_All_Traces = 'select_rsq'
+# Plot_All_Traces = True
+Plot_All_Traces = 'select_rsq'
 # Plot_All_Traces = 'select_amp'
 # Plot_All_Traces = 'select_trend'
 # Plot_All_Traces = 'select_decay'
 
 # set arbitrary thresholds for filtering by R, Amp or other parameters
 rsq_threshold = 0.97
-amp_threshold = 3    # different number for heatmap and for trace, but why? heatmap is norm after
-trend_threshold = 40
+amp_threshold = 5    # different number for heatmap and for trace, but why? heatmap is norm after
+trend_threshold = 17
 decay_threshold = 0.000001
 
 # cut first x hours before and leave y hours total (cutoff = 12, cutoff2 = None --- default)
@@ -48,13 +48,13 @@ cutoff2 = None
 
 # set number of explants or how many individual L and R SCNs were analyzed.
 # There will be Nr rows and 2 columns - before, after (subfolders of each explant) for experiment = 'before_after_rhythm'
-Nr = 6
+Nr = 36
 
 #For experiment = 'rhythm' or 'decay', need also Nc and Nw variables to control cols and rows
 # no. of columns
-Nc = 3
+Nc = 6
 # no. of rows
-Nw = 2
+Nw = 6
 
 # Adjust spacing between before left-right and up-down heatmap and histogram plots, for 6 SCN try -0.9, for less or for big CP -0.6
 wspace= 0.1
@@ -67,7 +67,7 @@ sharey = True
 
 # Adjust how close and how big labels are in Phase_Histogram, depends on number of plots and wspace, for 6 rows try -13 and 4
 pad = -13
-fontsize = 8
+fontsize = 3
 
 # For Parameters csv and violin plots - set name and nameend variables, depends on length of folder names
 name = -5               # -4 for nontreated CP, -5 for nontreated SCN, for treated CP -8, for treated SCN -12
@@ -85,7 +85,7 @@ lognorm = False
 nonorm = False
 
 # Make violinn plot for statistics combining different explants, True - experiment specific, need to adjust and finetune the script
-combineGroup = False
+combineGroup = True
 
 # For TIFSEQUENCE - how many pictures u want? Set Nx, total pictures will be Nx^2
 Nx = 7
@@ -570,19 +570,19 @@ if experiment == 'before_after_rhythm':
                     for m in datar[cutoff:cutoff2].columns[1:]:
                         # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])   # data_filt['Rsq'] > data_filt['Rsq'].quantile(0.25)
                         if Nw == 1 or Nc == 1:
-                            axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                            axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
                             axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                         else:
-                            axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])  
+                            axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)  
                             axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                         
                 else:
                     # axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1)) 
                     if Nw == 1 or Nc == 1:
-                        axs[counter].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1)) 
+                        axs[counter].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1), linewidth=0.1) 
                         axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                     else:
-                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1)) 
+                        axs[i, j].plot(datar.index[cutoff:cutoff2], datar[cutoff:cutoff2].median(axis=1), linewidth=0.1) 
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                     
                 # Update 29.5.2023
@@ -990,14 +990,14 @@ if experiment == 'rhythm':
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             rsq_value = df['Rsq'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if rsq_value > rsq_threshold:                      
-                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
               
                     else:
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             rsq_value = df['Rsq'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if rsq_value > rsq_threshold:                      
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1) 
                                                              
                 if Plot_All_Traces == 'select_amp':
 
@@ -1006,14 +1006,14 @@ if experiment == 'rhythm':
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             amp_value = df['Amplitude'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if amp_value > amp_threshold:                      
-                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
               
                     else:
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             amp_value = df['Amplitude'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if amp_value > amp_threshold:                      
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])                            
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)                            
 
                 if Plot_All_Traces == 'select_trend':
 
@@ -1022,14 +1022,14 @@ if experiment == 'rhythm':
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             trend_value = df['Trend'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if trend_value > trend_threshold:                      
-                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
               
                     else:
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             trend_value = df['Trend'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if trend_value > trend_threshold:                      
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])                     
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)                     
 
                 if Plot_All_Traces == 'select_decay':
 
@@ -1038,26 +1038,26 @@ if experiment == 'rhythm':
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             decay_value = df['Decay'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if decay_value > decay_threshold:                      
-                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                                axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
               
                     else:
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')                    
                         for m in datar[cutoff:cutoff2].columns[1:]:                            
                             decay_value = df['Decay'].T.iloc[datar[cutoff:cutoff2].columns[1:].get_loc(m)] # Get integer location for requested label.
                             if decay_value > decay_threshold:                      
-                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])      
+                                axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)      
 
                 if Plot_All_Traces is True:
                     
                     if Nw == 1 or Nc == 1:
                         axs[counter].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                         for m in datar[cutoff:cutoff2].columns[1:]:
-                            axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2])
+                            axs[counter].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1)
 
                     else:
                         axs[i, j].plot(data.index[cutoff:cutoff2], data[cutoff:cutoff2].median(axis=1), color='r')
                         for m in datar[cutoff:cutoff2].columns[1:]:
-                            axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2]) 
+                            axs[i, j].plot(datar.index[cutoff:cutoff2], datar[m][cutoff:cutoff2], linewidth=0.1) 
                                                    
                 else:
 
@@ -1513,6 +1513,484 @@ if graphtype == 'Parameters':
     # !!! THIS IS EXPERIMENT SPECIFIC, here it separates 6 explants from 1 ChP experiment to 2 groups and combines them for statistics
     if combineGroup == True:
         
+        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
+                   'Rsq\\CP07', 'Rsq\\CP08', 'Rsq\\CP09', 'Rsq\\CP10', 'Rsq\\CP11', 'Rsq\\CP12', 'Rsq\\CP13', 'Rsq\\CP14', 'Rsq\\CP15', 'Rsq\\CP16', 'Rsq\\CP17', 'Rsq\\CP18']]
+        # Rename columns
+        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP07', 'Rsq_CP08', 'Rsq_CP09', 'Rsq_CP10', 'Rsq_CP11', 'Rsq_CP12', 'Rsq_CP13', 'Rsq_CP14', 'Rsq_CP15', 'Rsq_CP16', 'Rsq_CP17', 'Rsq_CP18']        
+        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP07', 'Rsq_CP08', 'Rsq_CP09', 'Rsq_CP10', 'Rsq_CP11', 'Rsq_CP12', 'Rsq_CP13', 'Rsq_CP14', 'Rsq_CP15', 'Rsq_CP16', 'Rsq_CP17', 'Rsq_CP18'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Rsq of all cells LD vs LL', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
+        
+        
+        
+        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
+                   'Rsq\\CP19', 'Rsq\\CP20', 'Rsq\\CP21', 'Rsq\\CP22', 'Rsq\\CP23', 'Rsq\\CP24', 'Rsq\\CP25', 'Rsq\\CP26', 'Rsq\\CP27', 'Rsq\\CP28', 'Rsq\\CP29', 'Rsq\\CP30']]
+        # Rename columns
+        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24', 'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30']        
+        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24', 'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+        
+        
+        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
+                   'Rsq\\CP19', 'Rsq\\CP20', 'Rsq\\CP21', 'Rsq\\CP22', 'Rsq\\CP23', 'Rsq\\CP24']]
+        # Rename columns
+        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24']        
+        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   ), 'Prefix'] = '1wSHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS 1w', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+        
+        
+        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
+                   'Rsq\\CP25', 'Rsq\\CP26', 'Rsq\\CP27', 'Rsq\\CP28', 'Rsq\\CP29', 'Rsq\\CP30']]
+        # Rename columns
+        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30']        
+        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
+                   'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = '2wSHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS 2w', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+        
+        
+        df3 = df2[['AmplitudeCP00A', 'AmplitudeCP00B', 'AmplitudeCP00C', 'AmplitudeCP00D', 'Amplitude\\CP01', 'Amplitude\\CP02', 'Amplitude\\CP03',
+        'Amplitude\\CP04', 
+        'Amplitude\\CP07', 'Amplitude\\CP08', 'Amplitude\\CP09',
+        'Amplitude\\CP10', 'Amplitude\\CP11', 'Amplitude\\CP12',
+        'Amplitude\\CP13', 'Amplitude\\CP14', 'Amplitude\\CP15',
+        'Amplitude\\CP16', 'Amplitude\\CP17', 'Amplitude\\CP18']]
+        # Rename columns
+        df3.columns = ['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 
+        'Amplitude_CP07', 'Amplitude_CP08', 'Amplitude_CP09',
+        'Amplitude_CP10', 'Amplitude_CP11', 'Amplitude_CP12',
+        'Amplitude_CP13', 'Amplitude_CP14', 'Amplitude_CP15',
+        'Amplitude_CP16', 'Amplitude_CP17', 'Amplitude_CP18']        
+        melted = df3.melt(value_vars=['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 
+        'Amplitude_CP07', 'Amplitude_CP08', 'Amplitude_CP09',
+        'Amplitude_CP10', 'Amplitude_CP11', 'Amplitude_CP12',
+        'Amplitude_CP13', 'Amplitude_CP14', 'Amplitude_CP15',
+        'Amplitude_CP16', 'Amplitude_CP17', 'Amplitude_CP18'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Amp of all cells LD vs LL', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
+        
+        
+        
+        df3 = df2[['AmplitudeCP00A', 'AmplitudeCP00B', 'AmplitudeCP00C', 'AmplitudeCP00D', 'Amplitude\\CP01', 'Amplitude\\CP02', 'Amplitude\\CP03',
+        'Amplitude\\CP04', 
+        'Amplitude\\CP19', 'Amplitude\\CP20', 'Amplitude\\CP21',
+        'Amplitude\\CP22', 'Amplitude\\CP23', 'Amplitude\\CP24',
+        'Amplitude\\CP25', 'Amplitude\\CP26', 'Amplitude\\CP27',
+        'Amplitude\\CP28', 'Amplitude\\CP29', 'Amplitude\\CP30']]
+        # Rename columns
+        df3.columns = ['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 
+        'Amplitude_CP19', 'Amplitude_CP20', 'Amplitude_CP21',
+        'Amplitude_CP22', 'Amplitude_CP23', 'Amplitude_CP24',
+        'Amplitude_CP25', 'Amplitude_CP26', 'Amplitude_CP27',
+        'Amplitude_CP28', 'Amplitude_CP29', 'Amplitude_CP30']        
+        melted = df3.melt(value_vars=['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 
+        'Amplitude_CP19', 'Amplitude_CP20', 'Amplitude_CP21',
+        'Amplitude_CP22', 'Amplitude_CP23', 'Amplitude_CP24',
+        'Amplitude_CP25', 'Amplitude_CP26', 'Amplitude_CP27',
+        'Amplitude_CP28', 'Amplitude_CP29', 'Amplitude_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
+        violin_stat(data=df, title='Amp of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+        
+       
+        
+       
+        # all three groups, no plotting yet
+        df3 = df2[['AmplitudeCP00A', 'AmplitudeCP00B', 'AmplitudeCP00C', 'AmplitudeCP00D', 'AmplitudeCP00E', 'AmplitudeCP00F',
+        'Amplitude\\CP01', 'Amplitude\\CP02', 'Amplitude\\CP03',
+        'Amplitude\\CP04', 'Amplitude\\CP05', 'Amplitude\\CP06',
+        'Amplitude\\CP07', 'Amplitude\\CP08', 'Amplitude\\CP09',
+        'Amplitude\\CP10', 'Amplitude\\CP11', 'Amplitude\\CP12',
+        'Amplitude\\CP13', 'Amplitude\\CP14', 'Amplitude\\CP15',
+        'Amplitude\\CP16', 'Amplitude\\CP17', 'Amplitude\\CP18',        
+        'Amplitude\\CP19', 'Amplitude\\CP20', 'Amplitude\\CP21',
+        'Amplitude\\CP22', 'Amplitude\\CP23', 'Amplitude\\CP24',
+        'Amplitude\\CP25', 'Amplitude\\CP26', 'Amplitude\\CP27',
+        'Amplitude\\CP28', 'Amplitude\\CP29', 'Amplitude\\CP30']]
+        # Rename columns
+        df3.columns = ['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP00E', 'Amplitude_CP00F',
+        'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 'Amplitude_CP05', 'Amplitude_CP06',
+        'Amplitude_CP07', 'Amplitude_CP08', 'Amplitude_CP09',
+        'Amplitude_CP10', 'Amplitude_CP11', 'Amplitude_CP12',
+        'Amplitude_CP13', 'Amplitude_CP14', 'Amplitude_CP15',
+        'Amplitude_CP16', 'Amplitude_CP17', 'Amplitude_CP18',        
+        'Amplitude_CP19', 'Amplitude_CP20', 'Amplitude_CP21',
+        'Amplitude_CP22', 'Amplitude_CP23', 'Amplitude_CP24',
+        'Amplitude_CP25', 'Amplitude_CP26', 'Amplitude_CP27',
+        'Amplitude_CP28', 'Amplitude_CP29', 'Amplitude_CP30']      
+        melted = df3.melt(value_vars=['Amplitude_CP00A', 'Amplitude_CP00B', 'Amplitude_CP00C', 'Amplitude_CP00D', 'Amplitude_CP00E', 'Amplitude_CP00F',
+        'Amplitude_CP01', 'Amplitude_CP02', 'Amplitude_CP03',
+        'Amplitude_CP04', 'Amplitude_CP05', 'Amplitude_CP06',
+        'Amplitude_CP07', 'Amplitude_CP08', 'Amplitude_CP09',
+        'Amplitude_CP10', 'Amplitude_CP11', 'Amplitude_CP12',
+        'Amplitude_CP13', 'Amplitude_CP14', 'Amplitude_CP15',
+        'Amplitude_CP16', 'Amplitude_CP17', 'Amplitude_CP18',        
+        'Amplitude_CP19', 'Amplitude_CP20', 'Amplitude_CP21',
+        'Amplitude_CP22', 'Amplitude_CP23', 'Amplitude_CP24',
+        'Amplitude_CP25', 'Amplitude_CP26', 'Amplitude_CP27',
+        'Amplitude_CP28', 'Amplitude_CP29', 'Amplitude_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
+                   | (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')
+                   | (melted['Prefix'] == 'CP05') | (melted['Prefix'] == 'CP06')), 'Prefix'] = 'LD'
+        
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
+        df.to_csv('AMPLITUDE COMBINE.csv')
+        
+        # all three groups, no plotting yet
+        df3 = df2[['PeriodCP00A', 'PeriodCP00B', 'PeriodCP00C', 'PeriodCP00D', 'PeriodCP00E', 'PeriodCP00F',
+        'Period\\CP01', 'Period\\CP02', 'Period\\CP03',
+        'Period\\CP04', 'Period\\CP05', 'Period\\CP06',
+        'Period\\CP07', 'Period\\CP08', 'Period\\CP09',
+        'Period\\CP10', 'Period\\CP11', 'Period\\CP12',
+        'Period\\CP13', 'Period\\CP14', 'Period\\CP15',
+        'Period\\CP16', 'Period\\CP17', 'Period\\CP18',        
+        'Period\\CP19', 'Period\\CP20', 'Period\\CP21',
+        'Period\\CP22', 'Period\\CP23', 'Period\\CP24',
+        'Period\\CP25', 'Period\\CP26', 'Period\\CP27',
+        'Period\\CP28', 'Period\\CP29', 'Period\\CP30']]
+        # Rename columns
+        df3.columns = ['Period_CP00A', 'Period_CP00B', 'Period_CP00C', 'Period_CP00D', 'Period_CP00E', 'Period_CP00F',
+        'Period_CP01', 'Period_CP02', 'Period_CP03',
+        'Period_CP04', 'Period_CP05', 'Period_CP06',
+        'Period_CP07', 'Period_CP08', 'Period_CP09',
+        'Period_CP10', 'Period_CP11', 'Period_CP12',
+        'Period_CP13', 'Period_CP14', 'Period_CP15',
+        'Period_CP16', 'Period_CP17', 'Period_CP18',        
+        'Period_CP19', 'Period_CP20', 'Period_CP21',
+        'Period_CP22', 'Period_CP23', 'Period_CP24',
+        'Period_CP25', 'Period_CP26', 'Period_CP27',
+        'Period_CP28', 'Period_CP29', 'Period_CP30']      
+        melted = df3.melt(value_vars=['Period_CP00A', 'Period_CP00B', 'Period_CP00C', 'Period_CP00D', 'Period_CP00E', 'Period_CP00F',
+        'Period_CP01', 'Period_CP02', 'Period_CP03',
+        'Period_CP04', 'Period_CP05', 'Period_CP06',
+        'Period_CP07', 'Period_CP08', 'Period_CP09',
+        'Period_CP10', 'Period_CP11', 'Period_CP12',
+        'Period_CP13', 'Period_CP14', 'Period_CP15',
+        'Period_CP16', 'Period_CP17', 'Period_CP18',        
+        'Period_CP19', 'Period_CP20', 'Period_CP21',
+        'Period_CP22', 'Period_CP23', 'Period_CP24',
+        'Period_CP25', 'Period_CP26', 'Period_CP27',
+        'Period_CP28', 'Period_CP29', 'Period_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
+                   | (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')
+                   | (melted['Prefix'] == 'CP05') | (melted['Prefix'] == 'CP06')), 'Prefix'] = 'LD'
+        
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
+        df.to_csv('PERIOD COMBINE.csv')
+        
+        
+        # all three groups, no plotting yet
+        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'RsqCP00E', 'RsqCP00F',
+        'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03',
+        'Rsq\\CP04', 'Rsq\\CP05', 'Rsq\\CP06',
+        'Rsq\\CP07', 'Rsq\\CP08', 'Rsq\\CP09',
+        'Rsq\\CP10', 'Rsq\\CP11', 'Rsq\\CP12',
+        'Rsq\\CP13', 'Rsq\\CP14', 'Rsq\\CP15',
+        'Rsq\\CP16', 'Rsq\\CP17', 'Rsq\\CP18',        
+        'Rsq\\CP19', 'Rsq\\CP20', 'Rsq\\CP21',
+        'Rsq\\CP22', 'Rsq\\CP23', 'Rsq\\CP24',
+        'Rsq\\CP25', 'Rsq\\CP26', 'Rsq\\CP27',
+        'Rsq\\CP28', 'Rsq\\CP29', 'Rsq\\CP30']]
+        # Rename columns
+        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP00E', 'Rsq_CP00F',
+        'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03',
+        'Rsq_CP04', 'Rsq_CP05', 'Rsq_CP06',
+        'Rsq_CP07', 'Rsq_CP08', 'Rsq_CP09',
+        'Rsq_CP10', 'Rsq_CP11', 'Rsq_CP12',
+        'Rsq_CP13', 'Rsq_CP14', 'Rsq_CP15',
+        'Rsq_CP16', 'Rsq_CP17', 'Rsq_CP18',        
+        'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21',
+        'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24',
+        'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27',
+        'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30']      
+        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP00E', 'Rsq_CP00F',
+        'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03',
+        'Rsq_CP04', 'Rsq_CP05', 'Rsq_CP06',
+        'Rsq_CP07', 'Rsq_CP08', 'Rsq_CP09',
+        'Rsq_CP10', 'Rsq_CP11', 'Rsq_CP12',
+        'Rsq_CP13', 'Rsq_CP14', 'Rsq_CP15',
+        'Rsq_CP16', 'Rsq_CP17', 'Rsq_CP18',        
+        'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21',
+        'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24',
+        'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27',
+        'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Rsq numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Rsq' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
+                   | (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')
+                   | (melted['Prefix'] == 'CP05') | (melted['Prefix'] == 'CP06')), 'Prefix'] = 'LD'
+        
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
+        df.to_csv('Rsq COMBINE.csv')
+        
+        
+        # UPDATE for 3 or more columns
+        
+        # def violin_stat(data, title, ticks, remove_outliers=True, iqr_value = 2.22, test = 'ttest'):
+        #     # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
+        #     if remove_outliers == True:
+        #         for col in data.columns.values:
+        #             iqr = data[col].quantile(0.75) - data[col].quantile(0.25)
+        #             lim = np.abs((data[col] - data[col].median()) / iqr) < iqr_value
+        #             data.loc[:, col] = data[col].where(lim, np.nan)
+            
+        #     title = title  
+            
+        #     # creating a dictionary with one specific color per group:
+        #     my_pal = {data.columns[0]: "slateblue", data.columns[1]: "tomato"}
+            
+        #     fig, ax = plt.subplots(1, figsize=(2,4))          
+        #     ax = sns.violinplot(data=data, palette=my_pal)
+        #     # plt.title(title)
+        #     ax.axes.xaxis.set_ticklabels(ticks)
+        #     ax.set_xlabel('') 
+        #     ax.set_ylabel(f'{title}') 
+        #     ax.spines['top'].set_visible(False) # to turn off individual borders 
+        #     ax.spines['right'].set_visible(False)
+        #     # plt.xticks(rotation=90)
+            
+        #     ###### Calculate t test p values between hue_dat for separate categories in col_dat ######
+        #     pvalues = []
+        #     datax1 = data[data.columns[0]].dropna(how='any')
+        #     datax2 = data[data.columns[1]].dropna(how='any')
+            
+        #     if test == 'ttest':
+        #         t, p = stats.ttest_ind(datax1.values, datax2.values)
+        #         pvalues = pvalues + [p]
+        #         plt.annotate('t test \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
+        #                      xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+        #     else:
+        #         t, p = stats.mannwhitneyu(datax1.values, datax2.values)    
+        #         pvalues = pvalues + [p]
+        #         plt.annotate('Mann-Whitney \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
+        #                      xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+            
+            
+        #     plt.savefig(f'{path}Violin_{title}.png', format = 'png', bbox_inches = 'tight')   
+        #     plt.savefig(f'{path}Violin_{title}.svg', format = 'svg', bbox_inches = 'tight')
+        #     plt.clf()
+        #     plt.close()
+        
+        # def KW_BoxenPlot1(data, col_var, y, mydir, ylim=(None, None), kind='boxstrip'):
+        #     x = col_var
+        #     x_lab = col_var
+        #     y_lab = y
+        #     by = data.groupby(col_var)  # for ANOVA and labels, auto-create col_order
+        #     #categories = len(by)
+        #     col_order = []
+        #     for a, frame in by:
+        #         col_order.append(a)
+        #     suptitle_all = f'{x_lab} vs {y_lab}'
+        
+        #     f, ax = plt.subplots(figsize=(3, 6))  # figsize not working?
+            
+        #     if kind == 'boxstrip':    
+        #         sns.boxplot(x=x, y=y, data=data, order=col_order)
+        #         sns.stripplot(x=x, y=y, data=data, order=col_order)
+        #     else:
+        #         g = sns.catplot(x=x, y=y, order=col_order, kind=kind, data=data, aspect=0.5)
+        #         g.set(ylim=ylim)
+        
+        #     ##### Kruskal-Wallis H-test with auto-assigned data ######
+        #     alist = []
+        #     for i in range(len(col_order)):
+        #         alist.append(data[y][data[x] == col_order[i]].dropna(how='any'))
+        #     tano, pano = stats.kruskal(*alist) # asterisk is for *args - common idiom to allow arbitrary number of arguments to functions    
+        #     if pano < 0.0000000001:
+        #         #plt.text(x_coord, y_coord, 'Kruskal-Wallis p < 1e-10' , fontsize=10)
+        #         ax.annotate('Kruskal-Wallis p < 1e-10', xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
+        #                     textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+        #     else:
+        #         #plt.text(x_coord, y_coord, 'Kruskal-Wallis p = ' + str(round(pano, 8)), fontsize=10)
+        #         ax.annotate('Kruskal-Wallis p = ' + str(round(pano, 8)), xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
+        #                     textcoords='offset points', horizontalalignment='right', verticalalignment='top')        
+        
+        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}.png', format = 'png', bbox_inches = 'tight')   
+        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}.svg', format = 'svg', bbox_inches = 'tight')
+        #     plt.clf()
+        #     plt.close()
+        
+        #     ##### Post-hoc tests - Dunn's ###############
+        #     xx = data[x][(data[x] == data[x]) & (data[y] == data[y])].dropna(how='any')
+        #     yy = data[y][data[x] == data[x]].dropna(how='any')
+        #     df_stat = pd.DataFrame(xx)          #create new dataframe to avoid NaN problems
+        #     df_stat[y] = yy                     #add column with analysed data to new dataframe
+        
+        #     #posthoc = sp.posthoc_dunn(df_stat.reset_index(drop=True), val_col=y, group_col=x)
+        #     pc = sp.posthoc_dunn(df_stat, val_col=y, group_col=x)
+        #     heatmap_args = {'linewidths': 0.25, 'linecolor': '0.5', 'clip_on': False, 'square': True, 'cbar_ax_bbox': [0.79, 0.35, 0.035, 0.3]}  #
+        #     sp.sign_plot(pc, **heatmap_args)
+        
+        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}_posthoc.png', format = 'png')
+        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}_posthoc.svg', format = 'svg')    
+        #     plt.clf()
+        #     plt.close()           
+        
+        
+        
+        
+        """
         df3 = df2[['Period\CHP1', 'Period\CHP2', 'Period\CHP3', 'Period\CHP4', 'Period\CHP5', 'Period\CHP6']]
         # Rename columns
         df3.columns = ['Period_CHP1', 'Period_CHP2', 'Period_CHP3', 'Period_CHP4', 'Period_CHP5', 'Period_CHP6']        
@@ -1607,7 +2085,9 @@ if graphtype == 'Parameters':
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Rsq of all cells', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')        
+        violin_stat(data=df, title='Rsq of all cells', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')   
+        
+        """
     
 # copy or move and rename animated gif files from all TIFF folders to anal folder
 if graphtype == 'GIFS': 
@@ -1644,7 +2124,7 @@ if graphtype == 'GIFS':
                     shutil.copy(os.path.join(root, name), f'{path}{newname}.gif')
         counter += 1
         
-        
+ 
 # create tablo from sequence of tiffs, choose how many from start (Nx), need to be square grid, e.g. 5x5 or 7x7
 if graphtype == 'TIFSEQUENCE':         
         
@@ -1735,5 +2215,5 @@ if graphtype == 'TIFSEQUENCE':
     plt.clf()
     plt.close()                
                 
-                
-                
+       
+        
