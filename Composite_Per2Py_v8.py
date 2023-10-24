@@ -3,7 +3,7 @@ Created on Thu Mar 18 12:55:07 2021
 @author: Martin.Sladek
 
 Make composite figure from many individual heatmaps or histograms
-v20231016 - filtering by parameter, TraceHeatmaps, and more
+v20231023 - filtering by parameter, TraceHeatmaps, and more
 """
 # imports
 import numpy  as np
@@ -24,14 +24,14 @@ experiment = 'rhythm'
 
 # Choose to plot heatmap of K, Halflife, Trend, Phase, Amplitude or Period, or Phase_Histogram, Trace , Parameters, GIFS, TraceHeatmaps, TIFSEQUENCE
 # (Pars.' do not need exp. specified and work on any n of folders. Copies animated gif files if graphtype is set to GIFS
-graphtype = 'Parameters'
+graphtype = 'TIFSEQUENCE'
 
 # Need arrow for treatment? Then add treatment time in h.
 treatment_time = 0
 
 # True - Plot all individual roi luminescence traces (TAKES a LONG TIME). False - Plot just median trace. 'select_parameter' - Plot rois filtred by parameter.
-# Plot_All_Traces = True
-Plot_All_Traces = 'select_rsq'
+Plot_All_Traces = True
+# Plot_All_Traces = 'select_rsq'
 # Plot_All_Traces = 'select_amp'
 # Plot_All_Traces = 'select_trend'
 # Plot_All_Traces = 'select_decay'
@@ -88,7 +88,7 @@ nonorm = False
 combineGroup = True
 
 # For TIFSEQUENCE - how many pictures u want? Set Nx, total pictures will be Nx^2
-Nx = 7
+Nx = 5
 
 
 # DO NOT EDIT BELOW
@@ -212,6 +212,57 @@ def violin_stat(data, title, ticks, remove_outliers=True, iqr_value = 2.22, test
     plt.clf()
     plt.close()
 
+
+# UPDATE for 3 or more columns        
+def KW_BoxenPlot1(data,path, ylim=(None, None), kind='boxen', name='Amplitude'):  # col_var, y, 
+    col_var = data.columns.values
+    col_order = []
+    for a in col_var:
+        col_order.append(a)
+
+    f, ax = plt.subplots(figsize=(3, 6))  # figsize not working?
+    
+    if kind == 'boxstrip':    
+        sns.boxplot(data=data, order=col_order) # , order=col_order
+        sns.stripplot(data=data, order=col_order)
+    else:
+        sns.catplot(kind='boxen', data=data, order=col_order, aspect=0.5) #g =  ..., order=col_order, 
+        # g.set(ylim=ylim)
+
+    ##### Kruskal-Wallis H-test with auto-assigned data ######
+    alist = []
+    for i in col_order:
+        alist.append(data[i].dropna(how='any'))
+    tano, pano = stats.kruskal(*alist) # asterisk is for *args - common idiom to allow arbitrary number of arguments to functions    
+    if pano < 0.0000000001:
+        #plt.text(x_coord, y_coord, 'Kruskal-Wallis p < 1e-10' , fontsize=10)
+        ax.annotate('Kruskal-Wallis p < 1e-10', xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
+                    textcoords='offset points', horizontalalignment='right', verticalalignment='top')
+    else:
+        #plt.text(x_coord, y_coord, 'Kruskal-Wallis p = ' + str(round(pano, 8)), fontsize=10)
+        ax.annotate('Kruskal-Wallis p = ' + str(round(pano, 8)), xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
+                    textcoords='offset points', horizontalalignment='right', verticalalignment='top')        
+
+    plt.savefig(f'{path}KW_BoxenPlot_{name}.png', format = 'png', bbox_inches = 'tight')   
+    plt.savefig(f'{path}KW_BoxenPlot1_{name}.svg', format = 'svg', bbox_inches = 'tight')
+    plt.clf()
+    plt.close()
+
+    # ##### Post-hoc tests - Dunn's ###############
+    # xx = data[x][(data[x] == data[x]) & (data[y] == data[y])].dropna(how='any')
+    # yy = data[y][data[x] == data[x]].dropna(how='any')
+    # df_stat = pd.DataFrame(xx)          #create new dataframe to avoid NaN problems
+    # df_stat[y] = yy                     #add column with analysed data to new dataframe
+
+    # #posthoc = sp.posthoc_dunn(df_stat.reset_index(drop=True), val_col=y, group_col=x)
+    # pc = sp.posthoc_dunn(df_stat, val_col=y, group_col=x)
+    # heatmap_args = {'linewidths': 0.25, 'linecolor': '0.5', 'clip_on': False, 'square': True, 'cbar_ax_bbox': [0.79, 0.35, 0.035, 0.3]}  #
+    # sp.sign_plot(pc, **heatmap_args)
+
+    # plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_posthoc.png', format = 'png')
+    # plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_posthoc.svg', format = 'svg')    
+    # plt.clf()
+    # plt.close()   
 
 # custom colors for nice circular hues
 circular_colors = np.array([[0.91510904, 0.55114749, 0.67037311],
@@ -1412,7 +1463,19 @@ if graphtype == 'Parameters':
     
     for mydir in mydirlist:
         data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])
-        df2['Period' + str(mydir[name:nameend])] = data2['Period']              
+        # df2['Period' + str(mydir[name:nameend])] = data2['Period']  
+
+    for mydir in mydirlist:
+        data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])        
+        if Plot_All_Traces == 'select_rsq':
+            data2 = data2[data2['Rsq'] > rsq_threshold]             
+        if Plot_All_Traces == 'select_amp':
+            data2 = data2[data2['Amplitude'] > amp_threshold]
+        if Plot_All_Traces == 'select_trend':
+            data2 = data2[data2['Trend'] > trend_threshold]             
+        if Plot_All_Traces == 'select_decay':
+            data2 = data2[data2['Decay'] > decay_threshold]    
+        df2['Period' + str(mydir[name:nameend])] = data2['Period']            
     
     for mydir in mydirlist:
         data2 = pd.read_csv(glob.glob(f'{mydir}\\*oscillatory_params.csv')[0])        
@@ -1510,8 +1573,10 @@ if graphtype == 'Parameters':
     I need to make another dataframe df with just two columns {'Period_CHP123': [1, 5, 3, 0, 3, ..., 1, 2, 3, 2, 1, ..., 5, 7, 9, 5, 0,...], 
                                                                'Period_CHP456': [1, 3, 5, 3, 1,..., 2, 3, 5, 4, 1,..., 0, 0, 0, 0, 1,...]}.    
     """
-    # !!! THIS IS EXPERIMENT SPECIFIC, here it separates 6 explants from 1 ChP experiment to 2 groups and combines them for statistics
+    # !!! THIS IS EXPERIMENT SPECIFIC
     if combineGroup == True:
+        
+        # FOR CHRONODISRUPTION ChP paper (Milica) - here it separates up to 36 explants from 6 ChP experiment to 2-3 groups and combines them for statistics
         
         df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
                    'Rsq\\CP07', 'Rsq\\CP08', 'Rsq\\CP09', 'Rsq\\CP10', 'Rsq\\CP11', 'Rsq\\CP12', 'Rsq\\CP13', 'Rsq\\CP14', 'Rsq\\CP15', 'Rsq\\CP16', 'Rsq\\CP17', 'Rsq\\CP18']]
@@ -1532,12 +1597,12 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
                    | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
                    | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
-                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Rsq of all cells LD vs LL', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
+        violin_stat(data=df, title='Nice Rsq of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
         
         
         
@@ -1560,64 +1625,13 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
                    | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
                    | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'LL'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
-        
-        
-        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
-                   'Rsq\\CP19', 'Rsq\\CP20', 'Rsq\\CP21', 'Rsq\\CP22', 'Rsq\\CP23', 'Rsq\\CP24']]
-        # Rename columns
-        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
-                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24']        
-        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
-                   'Rsq_CP19', 'Rsq_CP20', 'Rsq_CP21', 'Rsq_CP22', 'Rsq_CP23', 'Rsq_CP24'],
-                          var_name='Var', value_name='Value')              
-        # Extract the 'CHP' and Rsq numbers from the 'Var' column
-        melted['Prefix'] = melted['Var'].str.split('_').str[1]
-        melted['Rsq'] = melted['Var'].str.split('_').str[0]
-        # Combine 'Prefix' and 'Rsq' to create new column names       
-        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
-                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
-                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
-       
-        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
-                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
-                   ), 'Prefix'] = '1wSHIFTS'
-
-        melted = melted[['Prefix', 'Value']].dropna()        
-        # Pivot the dataframe and create the new dataframe 'df'
-        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS 1w', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
-        
-        
-        df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03', 'Rsq\\CP04',
-                   'Rsq\\CP25', 'Rsq\\CP26', 'Rsq\\CP27', 'Rsq\\CP28', 'Rsq\\CP29', 'Rsq\\CP30']]
-        # Rename columns
-        df3.columns = ['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
-                   'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30']        
-        melted = df3.melt(value_vars=['Rsq_CP00A', 'Rsq_CP00B', 'Rsq_CP00C', 'Rsq_CP00D', 'Rsq_CP01', 'Rsq_CP02', 'Rsq_CP03', 'Rsq_CP04',
-                   'Rsq_CP25', 'Rsq_CP26', 'Rsq_CP27', 'Rsq_CP28', 'Rsq_CP29', 'Rsq_CP30'],
-                          var_name='Var', value_name='Value')              
-        # Extract the 'CHP' and Rsq numbers from the 'Var' column
-        melted['Prefix'] = melted['Var'].str.split('_').str[1]
-        melted['Rsq'] = melted['Var'].str.split('_').str[0]
-        # Combine 'Prefix' and 'Rsq' to create new column names       
-        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
-                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
-                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')), 'Prefix'] = 'LD'
-       
-        melted.loc[((melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = '2wSHIFTS'
-
-        melted = melted[['Prefix', 'Value']].dropna()        
-        # Pivot the dataframe and create the new dataframe 'df'
-        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Rsq of all cells LD vs SHIFTS 2w', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
-        
+        violin_stat(data=df, title='Nice Rsq of all cells LD vs LL', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+            
         
         df3 = df2[['AmplitudeCP00A', 'AmplitudeCP00B', 'AmplitudeCP00C', 'AmplitudeCP00D', 'Amplitude\\CP01', 'Amplitude\\CP02', 'Amplitude\\CP03',
         'Amplitude\\CP04', 
@@ -1650,12 +1664,12 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
                    | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
                    | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
-                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Amp of all cells LD vs LL', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
+        violin_stat(data=df, title='Amp of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=False, iqr_value=8.88, test='mann')  
         
         
         
@@ -1690,17 +1704,17 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
                    | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
                    | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'LL'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)               
-        violin_stat(data=df, title='Amp of all cells LD vs SHIFTS', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
+        violin_stat(data=df, title='Amp of all cells LD vs LL', ticks=df.columns, remove_outliers=True, iqr_value=8.88, test='mann')  
         
        
         
        
-        # all three groups, no plotting yet
+        # all three groups
         df3 = df2[['AmplitudeCP00A', 'AmplitudeCP00B', 'AmplitudeCP00C', 'AmplitudeCP00D', 'AmplitudeCP00E', 'AmplitudeCP00F',
         'Amplitude\\CP01', 'Amplitude\\CP02', 'Amplitude\\CP03',
         'Amplitude\\CP04', 'Amplitude\\CP05', 'Amplitude\\CP06',
@@ -1738,7 +1752,7 @@ if graphtype == 'Parameters':
                           var_name='Var', value_name='Value')              
         # Extract the 'CHP' and Rsq numbers from the 'Var' column
         melted['Prefix'] = melted['Var'].str.split('_').str[1]
-        melted['Rsq'] = melted['Var'].str.split('_').str[0]
+        melted['Amp'] = melted['Var'].str.split('_').str[0]
         # Combine 'Prefix' and 'Rsq' to create new column names       
         melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
                    | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
@@ -1749,19 +1763,21 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
                    | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
                    | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
-                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
        
         melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
                    | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
                    | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'xLL'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
         df.to_csv('AMPLITUDE COMBINE.csv')
         
-        # all three groups, no plotting yet
+        KW_BoxenPlot1(data=df, path=path, kind='boxen', name='Amplitude')
+        
+        # all three groups
         df3 = df2[['PeriodCP00A', 'PeriodCP00B', 'PeriodCP00C', 'PeriodCP00D', 'PeriodCP00E', 'PeriodCP00F',
         'Period\\CP01', 'Period\\CP02', 'Period\\CP03',
         'Period\\CP04', 'Period\\CP05', 'Period\\CP06',
@@ -1810,20 +1826,22 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
                    | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
                    | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
-                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
        
         melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
                    | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
                    | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'xLL'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
         df.to_csv('PERIOD COMBINE.csv')
         
+        KW_BoxenPlot1(data=df, path=path, kind='boxen', name='Period')
         
-        # all three groups, no plotting yet
+        
+        # all three groups
         df3 = df2[['RsqCP00A', 'RsqCP00B', 'RsqCP00C', 'RsqCP00D', 'RsqCP00E', 'RsqCP00F',
         'Rsq\\CP01', 'Rsq\\CP02', 'Rsq\\CP03',
         'Rsq\\CP04', 'Rsq\\CP05', 'Rsq\\CP06',
@@ -1872,125 +1890,152 @@ if graphtype == 'Parameters':
         melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
                    | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
                    | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
-                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'LL'
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
        
         melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
                    | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
                    | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
-                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'SHIFTS'
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'xLL'
 
         melted = melted[['Prefix', 'Value']].dropna()        
         # Pivot the dataframe and create the new dataframe 'df'
         df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
         df.to_csv('Rsq COMBINE.csv')
         
+        KW_BoxenPlot1(data=df, path=path, kind='boxen', name='Rsq')        
+
+
+        # all three groups
+        df3 = df2[['TrendCP00A', 'TrendCP00B', 'TrendCP00C', 'TrendCP00D', 'TrendCP00E', 'TrendCP00F',
+        'Trend\\CP01', 'Trend\\CP02', 'Trend\\CP03',
+        'Trend\\CP04', 'Trend\\CP05', 'Trend\\CP06',
+        'Trend\\CP07', 'Trend\\CP08', 'Trend\\CP09',
+        'Trend\\CP10', 'Trend\\CP11', 'Trend\\CP12',
+        'Trend\\CP13', 'Trend\\CP14', 'Trend\\CP15',
+        'Trend\\CP16', 'Trend\\CP17', 'Trend\\CP18',        
+        'Trend\\CP19', 'Trend\\CP20', 'Trend\\CP21',
+        'Trend\\CP22', 'Trend\\CP23', 'Trend\\CP24',
+        'Trend\\CP25', 'Trend\\CP26', 'Trend\\CP27',
+        'Trend\\CP28', 'Trend\\CP29', 'Trend\\CP30']]
+        # Rename columns
+        df3.columns = ['Trend_CP00A', 'Trend_CP00B', 'Trend_CP00C', 'Trend_CP00D', 'Trend_CP00E', 'Trend_CP00F',
+        'Trend_CP01', 'Trend_CP02', 'Trend_CP03',
+        'Trend_CP04', 'Trend_CP05', 'Trend_CP06',
+        'Trend_CP07', 'Trend_CP08', 'Trend_CP09',
+        'Trend_CP10', 'Trend_CP11', 'Trend_CP12',
+        'Trend_CP13', 'Trend_CP14', 'Trend_CP15',
+        'Trend_CP16', 'Trend_CP17', 'Trend_CP18',        
+        'Trend_CP19', 'Trend_CP20', 'Trend_CP21',
+        'Trend_CP22', 'Trend_CP23', 'Trend_CP24',
+        'Trend_CP25', 'Trend_CP26', 'Trend_CP27',
+        'Trend_CP28', 'Trend_CP29', 'Trend_CP30']      
+        melted = df3.melt(value_vars=['Trend_CP00A', 'Trend_CP00B', 'Trend_CP00C', 'Trend_CP00D', 'Trend_CP00E', 'Trend_CP00F',
+        'Trend_CP01', 'Trend_CP02', 'Trend_CP03',
+        'Trend_CP04', 'Trend_CP05', 'Trend_CP06',
+        'Trend_CP07', 'Trend_CP08', 'Trend_CP09',
+        'Trend_CP10', 'Trend_CP11', 'Trend_CP12',
+        'Trend_CP13', 'Trend_CP14', 'Trend_CP15',
+        'Trend_CP16', 'Trend_CP17', 'Trend_CP18',        
+        'Trend_CP19', 'Trend_CP20', 'Trend_CP21',
+        'Trend_CP22', 'Trend_CP23', 'Trend_CP24',
+        'Trend_CP25', 'Trend_CP26', 'Trend_CP27',
+        'Trend_CP28', 'Trend_CP29', 'Trend_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Trend numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Trend'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Trend' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
+                   | (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')
+                   | (melted['Prefix'] == 'CP05') | (melted['Prefix'] == 'CP06')), 'Prefix'] = 'LD'
         
-        # UPDATE for 3 or more columns
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'xLL'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
+        df.to_csv('Trend COMBINE.csv')
         
-        # def violin_stat(data, title, ticks, remove_outliers=True, iqr_value = 2.22, test = 'ttest'):
-        #     # FILTER outliers by iqr filter: within 2.22 IQR (equiv. to z-score < 3)
-        #     if remove_outliers == True:
-        #         for col in data.columns.values:
-        #             iqr = data[col].quantile(0.75) - data[col].quantile(0.25)
-        #             lim = np.abs((data[col] - data[col].median()) / iqr) < iqr_value
-        #             data.loc[:, col] = data[col].where(lim, np.nan)
-            
-        #     title = title  
-            
-        #     # creating a dictionary with one specific color per group:
-        #     my_pal = {data.columns[0]: "slateblue", data.columns[1]: "tomato"}
-            
-        #     fig, ax = plt.subplots(1, figsize=(2,4))          
-        #     ax = sns.violinplot(data=data, palette=my_pal)
-        #     # plt.title(title)
-        #     ax.axes.xaxis.set_ticklabels(ticks)
-        #     ax.set_xlabel('') 
-        #     ax.set_ylabel(f'{title}') 
-        #     ax.spines['top'].set_visible(False) # to turn off individual borders 
-        #     ax.spines['right'].set_visible(False)
-        #     # plt.xticks(rotation=90)
-            
-        #     ###### Calculate t test p values between hue_dat for separate categories in col_dat ######
-        #     pvalues = []
-        #     datax1 = data[data.columns[0]].dropna(how='any')
-        #     datax2 = data[data.columns[1]].dropna(how='any')
-            
-        #     if test == 'ttest':
-        #         t, p = stats.ttest_ind(datax1.values, datax2.values)
-        #         pvalues = pvalues + [p]
-        #         plt.annotate('t test \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
-        #                      xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
-        #     else:
-        #         t, p = stats.mannwhitneyu(datax1.values, datax2.values)    
-        #         pvalues = pvalues + [p]
-        #         plt.annotate('Mann-Whitney \nP = ' + str(round(p, 10)), xy=(1, 1), xycoords='axes fraction', fontsize=10, 
-        #                      xytext=(-5, 5), textcoords='offset points', horizontalalignment='right', verticalalignment='top')
-            
-            
-        #     plt.savefig(f'{path}Violin_{title}.png', format = 'png', bbox_inches = 'tight')   
-        #     plt.savefig(f'{path}Violin_{title}.svg', format = 'svg', bbox_inches = 'tight')
-        #     plt.clf()
-        #     plt.close()
-        
-        # def KW_BoxenPlot1(data, col_var, y, mydir, ylim=(None, None), kind='boxstrip'):
-        #     x = col_var
-        #     x_lab = col_var
-        #     y_lab = y
-        #     by = data.groupby(col_var)  # for ANOVA and labels, auto-create col_order
-        #     #categories = len(by)
-        #     col_order = []
-        #     for a, frame in by:
-        #         col_order.append(a)
-        #     suptitle_all = f'{x_lab} vs {y_lab}'
-        
-        #     f, ax = plt.subplots(figsize=(3, 6))  # figsize not working?
-            
-        #     if kind == 'boxstrip':    
-        #         sns.boxplot(x=x, y=y, data=data, order=col_order)
-        #         sns.stripplot(x=x, y=y, data=data, order=col_order)
-        #     else:
-        #         g = sns.catplot(x=x, y=y, order=col_order, kind=kind, data=data, aspect=0.5)
-        #         g.set(ylim=ylim)
-        
-        #     ##### Kruskal-Wallis H-test with auto-assigned data ######
-        #     alist = []
-        #     for i in range(len(col_order)):
-        #         alist.append(data[y][data[x] == col_order[i]].dropna(how='any'))
-        #     tano, pano = stats.kruskal(*alist) # asterisk is for *args - common idiom to allow arbitrary number of arguments to functions    
-        #     if pano < 0.0000000001:
-        #         #plt.text(x_coord, y_coord, 'Kruskal-Wallis p < 1e-10' , fontsize=10)
-        #         ax.annotate('Kruskal-Wallis p < 1e-10', xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
-        #                     textcoords='offset points', horizontalalignment='right', verticalalignment='top')
-        #     else:
-        #         #plt.text(x_coord, y_coord, 'Kruskal-Wallis p = ' + str(round(pano, 8)), fontsize=10)
-        #         ax.annotate('Kruskal-Wallis p = ' + str(round(pano, 8)), xy=(1, 1), xycoords='axes fraction', fontsize=10, xytext=(-15, -15), 
-        #                     textcoords='offset points', horizontalalignment='right', verticalalignment='top')        
-        
-        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}.png', format = 'png', bbox_inches = 'tight')   
-        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}.svg', format = 'svg', bbox_inches = 'tight')
-        #     plt.clf()
-        #     plt.close()
-        
-        #     ##### Post-hoc tests - Dunn's ###############
-        #     xx = data[x][(data[x] == data[x]) & (data[y] == data[y])].dropna(how='any')
-        #     yy = data[y][data[x] == data[x]].dropna(how='any')
-        #     df_stat = pd.DataFrame(xx)          #create new dataframe to avoid NaN problems
-        #     df_stat[y] = yy                     #add column with analysed data to new dataframe
-        
-        #     #posthoc = sp.posthoc_dunn(df_stat.reset_index(drop=True), val_col=y, group_col=x)
-        #     pc = sp.posthoc_dunn(df_stat, val_col=y, group_col=x)
-        #     heatmap_args = {'linewidths': 0.25, 'linecolor': '0.5', 'clip_on': False, 'square': True, 'cbar_ax_bbox': [0.79, 0.35, 0.035, 0.3]}  #
-        #     sp.sign_plot(pc, **heatmap_args)
-        
-        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}_posthoc.png', format = 'png')
-        #     plt.savefig(f'{mydir}' + '\\' + f'KW_BoxenPlot1_{suptitle_all}_posthoc.svg', format = 'svg')    
-        #     plt.clf()
-        #     plt.close()           
+        KW_BoxenPlot1(data=df, path=path, kind='boxen', name='Trend')
         
         
+        # all three groups
+        df3 = df2[['DecayCP00A', 'DecayCP00B', 'DecayCP00C', 'DecayCP00D', 'DecayCP00E', 'DecayCP00F',
+        'Decay\\CP01', 'Decay\\CP02', 'Decay\\CP03',
+        'Decay\\CP04', 'Decay\\CP05', 'Decay\\CP06',
+        'Decay\\CP07', 'Decay\\CP08', 'Decay\\CP09',
+        'Decay\\CP10', 'Decay\\CP11', 'Decay\\CP12',
+        'Decay\\CP13', 'Decay\\CP14', 'Decay\\CP15',
+        'Decay\\CP16', 'Decay\\CP17', 'Decay\\CP18',        
+        'Decay\\CP19', 'Decay\\CP20', 'Decay\\CP21',
+        'Decay\\CP22', 'Decay\\CP23', 'Decay\\CP24',
+        'Decay\\CP25', 'Decay\\CP26', 'Decay\\CP27',
+        'Decay\\CP28', 'Decay\\CP29', 'Decay\\CP30']]
+        # Rename columns
+        df3.columns = ['Decay_CP00A', 'Decay_CP00B', 'Decay_CP00C', 'Decay_CP00D', 'Decay_CP00E', 'Decay_CP00F',
+        'Decay_CP01', 'Decay_CP02', 'Decay_CP03',
+        'Decay_CP04', 'Decay_CP05', 'Decay_CP06',
+        'Decay_CP07', 'Decay_CP08', 'Decay_CP09',
+        'Decay_CP10', 'Decay_CP11', 'Decay_CP12',
+        'Decay_CP13', 'Decay_CP14', 'Decay_CP15',
+        'Decay_CP16', 'Decay_CP17', 'Decay_CP18',        
+        'Decay_CP19', 'Decay_CP20', 'Decay_CP21',
+        'Decay_CP22', 'Decay_CP23', 'Decay_CP24',
+        'Decay_CP25', 'Decay_CP26', 'Decay_CP27',
+        'Decay_CP28', 'Decay_CP29', 'Decay_CP30']      
+        melted = df3.melt(value_vars=['Decay_CP00A', 'Decay_CP00B', 'Decay_CP00C', 'Decay_CP00D', 'Decay_CP00E', 'Decay_CP00F',
+        'Decay_CP01', 'Decay_CP02', 'Decay_CP03',
+        'Decay_CP04', 'Decay_CP05', 'Decay_CP06',
+        'Decay_CP07', 'Decay_CP08', 'Decay_CP09',
+        'Decay_CP10', 'Decay_CP11', 'Decay_CP12',
+        'Decay_CP13', 'Decay_CP14', 'Decay_CP15',
+        'Decay_CP16', 'Decay_CP17', 'Decay_CP18',        
+        'Decay_CP19', 'Decay_CP20', 'Decay_CP21',
+        'Decay_CP22', 'Decay_CP23', 'Decay_CP24',
+        'Decay_CP25', 'Decay_CP26', 'Decay_CP27',
+        'Decay_CP28', 'Decay_CP29', 'Decay_CP30'],
+                          var_name='Var', value_name='Value')              
+        # Extract the 'CHP' and Decay numbers from the 'Var' column
+        melted['Prefix'] = melted['Var'].str.split('_').str[1]
+        melted['Decay'] = melted['Var'].str.split('_').str[0]
+        # Combine 'Prefix' and 'Decay' to create new column names       
+        melted.loc[((melted['Prefix'] == 'CP00A') | (melted['Prefix'] == 'CP00B') | (melted['Prefix'] == 'CP00C')
+                   | (melted['Prefix'] == 'CP00D')| (melted['Prefix'] == 'CP00E')| (melted['Prefix'] == 'CP00F')
+                   | (melted['Prefix'] == 'CP01')| (melted['Prefix'] == 'CP02')
+                   | (melted['Prefix'] == 'CP03') | (melted['Prefix'] == 'CP04')
+                   | (melted['Prefix'] == 'CP05') | (melted['Prefix'] == 'CP06')), 'Prefix'] = 'LD'
+        
+        melted.loc[((melted['Prefix'] == 'CP07') | (melted['Prefix'] == 'CP08') | (melted['Prefix'] == 'CP09')
+                   | (melted['Prefix'] == 'CP10')| (melted['Prefix'] == 'CP11')| (melted['Prefix'] == 'CP12')
+                   | (melted['Prefix'] == 'CP13') | (melted['Prefix'] == 'CP14') | (melted['Prefix'] == 'CP15') | (melted['Prefix'] == 'CP16') 
+                   | (melted['Prefix'] == 'CP17') | (melted['Prefix'] == 'CP18')), 'Prefix'] = 'SHIFTS'
+       
+        melted.loc[((melted['Prefix'] == 'CP19') | (melted['Prefix'] == 'CP20') | (melted['Prefix'] == 'CP21')
+                   | (melted['Prefix'] == 'CP22')| (melted['Prefix'] == 'CP23')| (melted['Prefix'] == 'CP24')
+                   | (melted['Prefix'] == 'CP25') | (melted['Prefix'] == 'CP26') | (melted['Prefix'] == 'CP27') | (melted['Prefix'] == 'CP28') 
+                   | (melted['Prefix'] == 'CP29') | (melted['Prefix'] == 'CP30')), 'Prefix'] = 'xLL'
+
+        melted = melted[['Prefix', 'Value']].dropna()        
+        # Pivot the dataframe and create the new dataframe 'df'
+        df = melted.pivot(columns='Prefix', values='Value')  #.reset_index(drop=True)  
+        df.to_csv('Decay COMBINE.csv')
+        
+        KW_BoxenPlot1(data=df, path=path, kind='boxen', name='Decay')  
         
         
         """
+        # FOR RNAseq ChP paper - here it separates 6 explants from 1 ChP experiment to 2 groups and combines them for statistics
+        
         df3 = df2[['Period\CHP1', 'Period\CHP2', 'Period\CHP3', 'Period\CHP4', 'Period\CHP5', 'Period\CHP6']]
         # Rename columns
         df3.columns = ['Period_CHP1', 'Period_CHP2', 'Period_CHP3', 'Period_CHP4', 'Period_CHP5', 'Period_CHP6']        
